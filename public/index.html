@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量上传文件</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>批量上传文件</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" multiple>
+        <br>
+        <button type="submit">上传</button>
+    </form>
+    <div id="status"></div>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                alert('请选择至少一个文件。');
+                return;
+            }
+
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '正在上传...';
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('file', file);
+            }
+
+            fetch('http://localhost:3000/upload?type=md&isThumb=true&compress=false&keepTemp=true', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    statusDiv.innerHTML = '上传成功！';
+                    console.log('上传成功：', data);
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = '上传失败！';
+                    console.error('上传失败：', error);
+                });
+        });
+    </script>
+</body>
+
+</html>
