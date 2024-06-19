@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量上传文件和图床</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <style>
+        #app {
+            padding: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #d9d9d9;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-area.dragover {
+            border-color: #409EFF;
+        }
+
+        .waterfall {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .waterfall-item {
+            width: 200px;
+        }
+
+        .waterfall-item img {
+            width: 100%;
+            height: auto;
+        }
+
+        .filter-buttons {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/element-plus@2.7.5/dist/index.full.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        const { ElTabs, ElTabPane, ElUpload, ElButton, ElMessage, ElSelect, ElOption, ElImage, ElLoading } = ElementPlus;
+
+        createApp({
+            components: {
+                ElTabs, ElTabPane, ElUpload, ElButton, ElMessage, ElSelect, ElOption, ElImage, ElLoading
+            },
+            setup() {
+                const uploadStatus = ref('');
+                const fileList = ref([]);
+                const fileType = ref('all');
+                const loading = ref(false);
+                const images = ref([]);
+                const activeTab = ref('1')
+
+                const fetchImages = async () => {
+                    loading.value = true;
+                    try {
+                        const response = await fetch(`https://source.giao.club/files?type=${fileType.value}`);
+                        const data = await response.json();
+                        images.value = data.map(file => ({
+                            ...file,
+                            preview: `${file.url}`
+                        }));
+                    } catch (error) {
+                        ElMessage.error('获取图片列表失败');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const handleUpload = async ({ file }) => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch('https://source.giao.club/upload?type=md&compress=false', {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        const data = await response.json();
+                        file.status = 'success';
+                        ElMessage.success(`${file.name} 上传成功`);
+                        fetchImages();
+                    } catch (error) {
+                        file.status = 'error';
+                        ElMessage.error(`${file.name} 上传失败`);
+                    }
+                };
+
+                const handleDragover = (e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('dragover');
+                };
+
+                const handleDragleave = (e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('dragover');
+                };
+
+                const handleDrop = async (e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('dragover');
+                    const droppedFiles = Array.from(e.dataTransfer.files);
+
+                    for (const file of droppedFiles) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        try {
+                            const response = await fetch('https://source.giao.club/upload?type=md&compress=false', {
+                                method: 'POST',
+                                body: formData,
+                            });
+                            const data = await response.json();
+                            ElMessage.success(`${file.name} 上传成功`);
+                        } catch (error) {
+                            ElMessage.error(`${file.name} 上传失败`);
+                        }
+                    }
+
+                    fetchImages();
+                };
+
+                const handleFilterChange = (value) => {
+                    fileType.value = value;
+                    fetchImages();
+                };
+
+                onMounted(() => {
+                    fetchImages();
+                });
+
+                return {
+                    uploadStatus,
+                    fileList,
+                    handleUpload,
+                    handleDragover,
+                    handleDragleave,
+                    handleDrop,
+                    images,
+                    fileType,
+                    loading,
+                    handleFilterChange,
+                    activeTab,
+                };
+            },
+            template: `
+                <el-tabs v-model="activeTab" >
+                    <el-tab-pane label="上传文件" name="1">
+                        <div 
+                            class="upload-area" 
+                            @dragover="handleDragover" 
+                            @dragleave="handleDragleave" 
+                            @drop="handleDrop">
+                            <p>拖拽文件到此处或点击上传</p>
+                            <el-upload 
+                                :multiple="true"
+                                :file-list="fileList"
+                                :http-request="handleUpload"
+                                drag>
+                                <el-button>选择文件</el-button>
+                            </el-upload>
+                        </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="图床" name="2">
+                        <div class="filter-buttons">
+                            <el-select v-model="fileType" @change="handleFilterChange" placeholder="选择类型">
+                                <el-option label="全部" value="all"></el-option>
+                                <el-option label="图片" value="images"></el-option>
+                                <el-option label="文件" value="files"></el-option>
+                            </el-select>
+                        </div>
+                        {{images}}
+                        <el-loading :loading="loading">
+                            <div class="waterfall">
+                                <div class="waterfall-item" v-for="(image, index) in images" :key="index">
+                                    <el-image :src="image.preview" :alt="image.filename" fit="cover" />
+                                </div>
+                            </div>
+                        </el-loading>
+                    </el-tab-pane>
+                </el-tabs>
+            `
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
