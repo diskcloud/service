@@ -176,7 +176,7 @@ router.get('/files', async (ctx) => {
 
     const [rows] = await connection.execute(
       `SELECT  created_by, created_at, public_by, public_expiration, updated_at, updated_by, filesize, filename, filelocation, thumb_location, is_public FROM files WHERE is_delete = 0 AND is_public = 1 LIMIT ? OFFSET ?`,
-      [limit, offset]
+      [String(limit), String(offset)]
     );
 
     ctx.body = rows;
