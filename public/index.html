@@ -86,7 +86,7 @@
                     formData.append('file', file);
 
                     try {
-                        const response = await fetch('https://source.giao.club/upload?type=md&compress=false&isThumb=true', {
+                        const response = await fetch('https://source.giao.club/upload?type=md&compress=false&isThumb=true&isPublic=true', {
                             method: 'POST',
                             body: formData,
                         });
@@ -120,7 +120,7 @@
                         formData.append('file', file);
 
                         try {
-                            const response = await fetch('https://source.giao.club/upload?type=md&compress=false&keepTemp=true&isThumb=true', {
+                            const response = await fetch('https://source.giao.club/upload?type=md&compress=false&keepTemp=true&isThumb=true&isPublic=true', {
                                 method: 'POST',
                                 body: formData,
                             });

@@ -9,6 +9,7 @@ const sharp = require('sharp');
 const { checkAndCreateTable } = require('./utils/checkAndCreateTable');
 const pool = require('./utils/db');
 const { appendSuffixToFilename } = require('./utils/appendSuffixToFilename');
+const { v4: uuidv4 } = require('uuid');
 require('dotenv').config({ path: '.env.local' });
 
 const app = new Koa();
@@ -27,6 +28,23 @@ const imageMimeTypes = [
   'image/x-icon',
   'image/svg+xml'
 ];
+
+function getMimeType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.png':
+      return 'image/png';
+    case '.gif':
+      return 'image/gif';
+    case '.webp':
+      return 'image/webp';
+    default:
+      return 'application/octet-stream';
+  }
+}
 
 app.use(require('koa-static')(path.join(__dirname, 'public')));
 
@@ -63,21 +81,24 @@ router.post('/upload', async (ctx) => {
 
     const compress = ctx.query.compress !== 'false'; // 默认压缩
     const keepTemp = ctx.query.keepTemp === 'true'; // 默认不保留临时文件
-    const isThumb = ctx.query.isThumb === 'true';
+    const isThumb = Number(ctx.query.isThumb === 'true');
+    const isPublic = Number(ctx.query.isPublic === 'true');
     const responseType = ctx.query.type;
 
     for (const file of fileList) {
       const mimeType = mime.lookup(file.filepath);
+      const fileId = uuidv4(); // 生成文件唯一ID
 
       const outputFilePath = path.join(
         __dirname,
         'public',
         'files',
-        path.basename(file.filepath)
+        fileId + path.extname(file.filepath) // 使用UUID作为文件名称
       );
+
       let outputFileThumbPath = null;
       if (isThumb && imageMimeTypes.includes(mimeType)) {
-        const fileThumbName = appendSuffixToFilename(file.newFilename, 'thumb');
+        const fileThumbName = `${fileId}_thumb${path.extname(file.filepath)}`; // 缩略图文件名称
 
         outputFileThumbPath = path.join(
           __dirname,
@@ -102,23 +123,25 @@ router.post('/upload', async (ctx) => {
         }
       }
 
-      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${path.basename(
-        outputFilePath
-      )}`;
-      const thumb_location = outputFileThumbPath ? `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${path.basename(outputFileThumbPath)}` : null;
+      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}`;
+      const thumb_location = outputFileThumbPath ? `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}?type=thumb` : null;
 
       await connection.execute(
         `INSERT INTO files (
-          filename, filesize, filelocation, created_by, is_public, thumb_location, is_delete
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          id, filename, filesize, filelocation, real_file_location, created_by, is_public, thumb_location, is_thumb, is_delete, real_file_thumb_location
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          fileId, // 使用UUID作为ID
           path.basename(outputFilePath),
           fs.statSync(outputFilePath).size,
           fileUrl,
+          outputFilePath, // 存储实际文件路径
           ctx.query.createdBy || 'anonymous',
-          ctx.query.isPublic === 'true',
+          isPublic,
           thumb_location,
-          0 // 假设默认的 `is_delete` 状态为 0（未删除）
+          isThumb,
+          0,
+          outputFileThumbPath
         ]
       );
 
@@ -144,6 +167,7 @@ router.post('/upload', async (ctx) => {
   }
 });
 
+
 router.get('/files', async (ctx) => {
   const connection = await pool.getConnection();
   try {
@@ -151,7 +175,7 @@ router.get('/files', async (ctx) => {
     const offset = parseInt(ctx.query.offset, 10) || 0; // 偏移量，默认为 0
 
     const [rows] = await connection.execute(
-      `SELECT * FROM files LIMIT ? OFFSET ?`,
+      `SELECT  created_by, created_at, public_by, public_expiration, updated_at, updated_by, filesize, filename, filelocation, thumb_location, is_public FROM files WHERE is_delete = 0 AND is_public = 1 LIMIT ? OFFSET ?`,
       [limit, offset]
     );
 
@@ -161,6 +185,57 @@ router.get('/files', async (ctx) => {
     ctx.body = 'Error retrieving files: ' + error.message;
   } finally {
     connection.release();
+  }
+});
+
+router.get('/files/:id', async (ctx) => {
+  const { id } = ctx.params;
+  const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
+  const connection = await pool.getConnection();
+
+  try {
+    // 查询文件数据，只获取必要字段
+    const [rows] = await connection.execute(
+      `SELECT filename, is_delete, is_public, public_expiration, real_file_location, real_file_thumb_location, is_thumb
+       FROM files 
+       WHERE id = ? 
+       AND is_delete = 0 
+       AND (is_public = 1 AND (public_expiration IS NULL OR public_expiration > NOW()))`, 
+       [id]
+    );
+
+    if (rows.length === 0) {
+      ctx.status = 404;
+      ctx.body = { message: 'File not found or not accessible' };
+      return;
+    }
+
+    const file = rows[0];
+
+    let fileLocation = file.real_file_location;
+    // 根据查询参数 'type' 决定返回原图或缩略图
+    if(file.is_thumb && type === 'thumb') {
+        fileLocation = file.real_file_thumb_location;
+    }
+
+    // 检查文件是否存在
+    if (!fs.existsSync(fileLocation)) {
+      ctx.status = 404;
+      ctx.body = { message: 'File not found' };
+      return;
+    }
+
+    // 设置响应头
+    ctx.set('Content-Type', getMimeType(fileLocation));
+    ctx.set('Content-Disposition', `inline; filename="${file.filename}"`);
+
+    // 返回文件流
+    ctx.body = fs.createReadStream(fileLocation);
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = { message: 'Internal server error', error: error.message };
+  } finally {
+    connection.release(); // 释放连接
   }
 });
 
