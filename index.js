@@ -167,7 +167,6 @@ router.post('/upload', async (ctx) => {
   }
 });
 
-
 router.get('/files', async (ctx) => {
   const connection = await pool.getConnection();
   try {

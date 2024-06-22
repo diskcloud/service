@@ -27,7 +27,9 @@ async function checkAndCreateTable() {
           thumb_location VARCHAR(255) DEFAULT NULL,
           is_delete TINYINT(1) NOT NULL DEFAULT '0',
           real_file_location VARCHAR(255) DEFAULT NULL,
-          real_file_thumb_location VARCHAR(255) DEFAULT NULL
+          real_file_thumb_location VARCHAR(255) DEFAULT NULL,
+          mime VARCHAR(255) DEFAULT NULL,
+          ext VARCHAR(50) DEFAULT NULL,
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
       );
       console.log('Table "files" created successfully.');
