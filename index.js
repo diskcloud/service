@@ -4,47 +4,19 @@ const { koaBody } = require('koa-body');
 const tinify = require('tinify');
 const path = require('path');
 const fs = require('fs');
-const mime = require('mime-types');
 const sharp = require('sharp');
 const { checkAndCreateTable } = require('./utils/checkAndCreateTable');
 const pool = require('./utils/db');
 const { appendSuffixToFilename } = require('./utils/appendSuffixToFilename');
 const { v4: uuidv4 } = require('uuid');
+const { detectFileType } = require('./utils/detectFileType');
+const { imageMimeTypes, tinifySupportedMimeTypes} = require('./constants/file')
 require('dotenv').config({ path: '.env.local' });
 
 const app = new Koa();
 const router = new Router();
 
 tinify.key = process.env.TINIFY_KEY;
-
-const tinifySupportedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-const imageMimeTypes = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/bmp',
-  'image/tiff',
-  'image/x-icon',
-  'image/svg+xml'
-];
-
-function getMimeType(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  switch (ext) {
-    case '.jpg':
-    case '.jpeg':
-      return 'image/jpeg';
-    case '.png':
-      return 'image/png';
-    case '.gif':
-      return 'image/gif';
-    case '.webp':
-      return 'image/webp';
-    default:
-      return 'application/octet-stream';
-  }
-}
 
 app.use(require('koa-static')(path.join(__dirname, 'public')));
 
@@ -86,7 +58,6 @@ router.post('/upload', async (ctx) => {
     const responseType = ctx.query.type;
 
     for (const file of fileList) {
-      const mimeType = mime.lookup(file.filepath);
       const fileId = uuidv4(); // 生成文件唯一ID
 
       const outputFilePath = path.join(
@@ -96,8 +67,10 @@ router.post('/upload', async (ctx) => {
         fileId + path.extname(file.filepath) // 使用UUID作为文件名称
       );
 
+      const { mime, ext } = await detectFileType(file.filepath, file);
+
       let outputFileThumbPath = null;
-      if (isThumb && imageMimeTypes.includes(mimeType)) {
+      if (isThumb && imageMimeTypes.includes(mime)) {
         const fileThumbName = `${fileId}_thumb${path.extname(file.filepath)}`; // 缩略图文件名称
 
         outputFileThumbPath = path.join(
@@ -110,9 +83,22 @@ router.post('/upload', async (ctx) => {
         await sharp(file.filepath)
           .resize(200, 200) // 调整图像大小为200x200像素
           .toFile(outputFileThumbPath);
+      } else if(isThumb) {
+        const back_thumbs = {
+          video: path.join(__dirname, 'public', 'icons', 'video.png'),
+          sheet: path.join(__dirname, 'public', 'icons', 'xlsx.png'),
+          pdf: path.join(__dirname, 'public', 'icons', 'pdf.png'),
+          document: path.join(__dirname, 'public', 'icons', 'doc.png'),
+        }
+
+        const unknown = path.join(__dirname, 'public', 'icons', 'unknown_file_types.png');
+
+        const thumb = Object.keys(back_thumbs).find(key => mime.includes(key));
+
+        outputFileThumbPath = back_thumbs[thumb] ?? unknown;
       }
 
-      if (compress && tinifySupportedMimeTypes.includes(mimeType)) {
+      if (compress && tinifySupportedMimeTypes.includes(mime)) {
         await tinify.fromFile(file.filepath).toFile(outputFilePath);
       } else {
         // 如果不支持压缩或者不要求压缩，保留临时文件则复制文件，否则移动文件
@@ -128,8 +114,20 @@ router.post('/upload', async (ctx) => {
 
       await connection.execute(
         `INSERT INTO files (
-          id, filename, filesize, filelocation, real_file_location, created_by, is_public, thumb_location, is_thumb, is_delete, real_file_thumb_location
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            id, 
+            filename, 
+            filesize, 
+            filelocation, 
+            real_file_location, 
+            created_by, 
+            is_public, 
+            thumb_location, 
+            is_thumb, 
+            is_delete, 
+            real_file_thumb_location,
+            mime,
+            ext
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           fileId, // 使用UUID作为ID
           path.basename(outputFilePath),
@@ -141,11 +139,13 @@ router.post('/upload', async (ctx) => {
           thumb_location,
           isThumb,
           0,
-          outputFileThumbPath
+          outputFileThumbPath,
+          mime,
+          ext
         ]
       );
 
-      if (responseType === 'md' && imageMimeTypes.includes(mimeType)) {
+      if (responseType === 'md' && imageMimeTypes.includes(mime)) {
         responses.push({
           filepath: `![${path.basename(outputFilePath)}](${fileUrl})`
         });
@@ -173,11 +173,53 @@ router.get('/files', async (ctx) => {
   try {
     const limit = parseInt(ctx.query.limit, 10) || 10; // 每页数量，默认为 10
     const offset = parseInt(ctx.query.offset, 10) || 0; // 偏移量，默认为 0
+    const type = ctx.query.type ?? ''; // 获取查询参数中的类型
 
+    const types = {
+      image: 'image',
+      video: 'video',
+      all: '',
+    }
+    
+    const excludedTypes = ['image', 'video']; // 要排除的类型
+    
+    let mimeCondition = ''; // 初始化mime条件
+    
+    // 构建 mime 条件
+    if (type === 'file') {
+      mimeCondition = excludedTypes.map(t => `mime NOT LIKE '%${t}%'`).join(' AND ');
+    } else if (types[type]) {
+      mimeCondition = `mime LIKE '%${types[type]}%'`;
+    }
+    
+    // 构建完整的 SQL 语句
+    const sql = `
+      SELECT  
+        created_by, 
+        created_at, 
+        public_by, 
+        public_expiration, 
+        updated_at, 
+        updated_by, 
+        filesize, 
+        filename, 
+        filelocation, 
+        thumb_location, 
+        is_public 
+      FROM 
+        files 
+      WHERE 
+        is_delete = 0
+        AND is_public = 1
+        ${mimeCondition ? `AND ${mimeCondition}` : ''}
+      LIMIT ? OFFSET ?`;
+    
+    // 执行查询
     const [rows] = await connection.execute(
-      `SELECT  created_by, created_at, public_by, public_expiration, updated_at, updated_by, filesize, filename, filelocation, thumb_location, is_public FROM files WHERE is_delete = 0 AND is_public = 1 LIMIT ? OFFSET ?`,
+      sql,
       [String(limit), String(offset)]
     );
+    
 
     ctx.body = rows;
   } catch (error) {
@@ -196,12 +238,22 @@ router.get('/files/:id', async (ctx) => {
   try {
     // 查询文件数据，只获取必要字段
     const [rows] = await connection.execute(
-      `SELECT filename, is_delete, is_public, public_expiration, real_file_location, real_file_thumb_location, is_thumb
-       FROM files 
-       WHERE id = ? 
-       AND is_delete = 0 
-       AND (is_public = 1 AND (public_expiration IS NULL OR public_expiration > NOW()))`, 
-       [id]
+      `
+      SELECT 
+        filename, 
+        is_delete, 
+        is_public, 
+        public_expiration, 
+        real_file_location, 
+        real_file_thumb_location, 
+        is_thumb,
+        mime,
+        ext
+      FROM files 
+      WHERE id = ? 
+      AND is_delete = 0 
+      AND (is_public = 1 AND (public_expiration IS NULL OR public_expiration > NOW()))`, 
+      [id]
     );
 
     if (rows.length === 0) {
@@ -224,9 +276,9 @@ router.get('/files/:id', async (ctx) => {
       ctx.body = { message: 'File not found' };
       return;
     }
-
+    const { mime } = await detectFileType(fileLocation);
     // 设置响应头
-    ctx.set('Content-Type', getMimeType(fileLocation));
+    ctx.set('Content-Type', mime);
     ctx.set('Content-Disposition', `inline; filename="${file.filename}"`);
 
     // 返回文件流
