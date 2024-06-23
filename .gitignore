@@ -46,8 +46,11 @@ jspm_packages/
 
 # 
 public/files/*
+provisional
 provisional/*
 privacy/*
+resource
+resource/*
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
