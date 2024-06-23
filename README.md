@@ -17,16 +17,18 @@ nodejs 实现文件上传功能
 
 
 ### 环境变量
-可以创建一个 `.env.local` 文件，在里面配置对应的环境变量
+创建一个 `.env.local` 文件，在里面配置对应的环境变量
 
-- TINIFY_KEY=
-- INTERNAL_NETWORK_DOMAIN=
-- PUBLIC_NETWORK_DOMAIN=
-- SERVER_PORT=
-- MYSQL_DATABASE=
-- MYSQL_HOST=
-- MYSQL_USER=
-- MYSQL_PASSWORD=
+TINIFY_KEY=
+INTERNAL_NETWORK_DOMAIN=http://localhost:3000
+PUBLIC_NETWORK_DOMAIN=http://localhost:3000
+SERVER_PORT=3000
+DIALECT=mysql
+MYSQL_DATABASE=
+MYSQL_HOST=
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_PORT=3306
 
 ### 创建表的字段说明
 

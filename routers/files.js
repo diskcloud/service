@@ -13,11 +13,14 @@ const { imageMimeTypes, tinifySupportedMimeTypes } = require('../constants/file'
 tinify.key = process.env.TINIFY_KEY;
 
 const router = new Router();
-const uploadDirectory = path.join(__dirname, '..', 'public', 'files');
+const uploadDirectory = path.join(__dirname, '..', 'resource'); // 修改后的上传目录
 const iconsDirectory = path.join(__dirname, '..', 'public', 'icons');
 
-// 获取缩略图路径
-const getFileThumbPath = (fileId) => path.join(uploadDirectory, `${fileId}_thumb`);
+// 获取实际文件路径
+const getRealFilePath = (fileId, ext) => path.join(uploadDirectory, `${fileId}${ext}`);
+
+// 获取实际缩略图路径
+const getRealThumbPath = (fileId) => path.join(uploadDirectory, `${fileId}_thumb.png`);
 
 // 获取默认缩略图路径
 const getDefaultThumbPath = (mime) => {
@@ -50,52 +53,52 @@ router.post('/upload', async (ctx) => {
     for (const file of fileList) {
       const fileId = uuidv4();
       const ext = path.extname(file.filepath);
-      const outputFilePath = path.join(uploadDirectory, `${fileId}${ext}`);
+      const realFilePath = getRealFilePath(fileId, ext);
 
       const { mime, ext: fileExt } = await detectFileType(file.filepath, file);
-      let outputFileThumbPath = null;
+      let realThumbPath = null;
 
       if (shouldGenerateThumb && imageMimeTypes.includes(mime)) {
-        outputFileThumbPath = getFileThumbPath(fileId);
+        realThumbPath = getRealThumbPath(fileId);
         await sharp(file.filepath)
           .resize(200, 200)
-          .toFile(outputFileThumbPath);
+          .toFile(realThumbPath);
       } else if (shouldGenerateThumb) {
-        outputFileThumbPath = getDefaultThumbPath(mime);
+        realThumbPath = getDefaultThumbPath(mime);
       }
 
       if (shouldCompress && tinifySupportedMimeTypes.includes(mime)) {
-        await tinify.fromFile(file.filepath).toFile(outputFilePath);
+        await tinify.fromFile(file.filepath).toFile(realFilePath);
       } else {
         if (shouldKeepTemp) {
-          await fsp.copyFile(file.filepath, outputFilePath);
+          await fsp.copyFile(file.filepath, realFilePath);
         } else {
-          await fsp.rename(file.filepath, outputFilePath);
+          await fsp.rename(file.filepath, realFilePath);
         }
       }
 
-      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}${ext}`;
-      const thumbUrl = shouldGenerateThumb ? `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}?type=thumb` : null;
+      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}`;
+      const thumbUrl = shouldGenerateThumb ? `${fileUrl}?type=thumb` : null;
 
       await File.create({
         id: fileId,
-        filename: path.basename(outputFilePath),
-        filesize: (await fsp.stat(outputFilePath)).size,
+        filename: path.basename(realFilePath),
+        filesize: (await fsp.stat(realFilePath)).size,
         filelocation: fileUrl,
-        real_file_location: outputFilePath,
+        real_file_location: realFilePath,
         created_by: ctx.query.createdBy || 'anonymous',
         is_public: isFilePublic,
         thumb_location: thumbUrl,
         is_thumb: shouldGenerateThumb,
         is_delete: false,
-        real_file_thumb_location: outputFileThumbPath,
+        real_file_thumb_location: realThumbPath,
         mime,
         ext: fileExt
       });
 
       const response = { filepath: fileUrl };
       if (responseType === 'md' && imageMimeTypes.includes(mime)) {
-        response.filepath = `![${path.basename(outputFilePath)}](${fileUrl})`;
+        response.filepath = `![${path.basename(realFilePath)}](${fileUrl})`;
       }
       responses.push(response);
 
@@ -177,7 +180,7 @@ router.get('/files', async (ctx) => {
   }
 });
 
-// 获取单个文件
+// 获取单个文件信息
 router.get('/files/:id', async (ctx) => {
   const { id } = ctx.params;
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
