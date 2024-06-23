@@ -2,6 +2,7 @@
 nodejs 实现文件上传功能
 
 ### 支持功能
+> 目前均为免费版本，Plus 版本还在规划中，Lite 和 Full 版本永久免费。
 
 | 功能         | Lite（缩减版） | Full（全量版） | Plus（增强版）      |
 |--------------|----------------|----------------|--------------|
@@ -15,6 +16,49 @@ nodejs 实现文件上传功能
 | 公开失效时间 | 否             | 否             | 是           |
 | 高级搜索功能 | 否             | 否             | 是           |
 
+### 使用方法
+
+```shell
+yarn install
+
+yarn dev
+```
+
+> 启动完成之后，会自动创建 resource 作为资源文件夹，而 provisional 会作为临时文件夹。后续会考虑开启定时任务进行清理。
+
+### 目录结构
+
+```shell
+├── LICENSE
+├── README.md
+├── constants
+│   └── file.js
+├── index.js
+├── models # 表模型
+│   └── files.js
+├── package.json
+├── public
+│   ├── icons
+│   │   ├── doc.png
+│   │   ├── document.png
+│   │   ├── folders.png
+│   │   ├── pdf.png
+│   │   ├── psd.png
+│   │   ├── shared_folders.png
+│   │   ├── unknown_file_types.png
+│   │   ├── video.png
+│   │   ├── xlsx.png
+│   │   └── zip.png
+│   └── index.html
+├── routers # 路由
+│   └── files.js
+├── utils
+│   ├── createPath.js
+│   ├── dbInstance.js
+│   ├── detectFileType.js
+│   └── responseFormatter.js
+└── yarn.lock
+```
 
 ### 环境变量
 创建一个 `.env.local` 文件，在里面配置对应的环境变量
@@ -32,7 +76,7 @@ MYSQL_PORT=3306
 
 ### 创建表的字段说明
 
-> 启动项目则会，自动创建，默认创建 `files` 表结构
+> 启动项目则会，自动创建创建 `files` 表结构
 
 ```sql
 CREATE TABLE files (
