@@ -15,7 +15,7 @@ app.use(require('koa-static')(path.join(__dirname, 'public')));
 const createDirectories = () => {
   const dirs = [
     path.join(__dirname, 'provisional'),
-    path.join(__dirname, 'public', 'resource')
+    path.join(__dirname, 'resource')
   ];
   dirs.forEach((dir) => {
     if (!fs.existsSync(dir)) {
