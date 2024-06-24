@@ -63,7 +63,8 @@ yarn dev
 ### 环境变量
 创建一个 `.env.local` 文件，在里面配置对应的环境变量
 
-TINIFY_KEY=
+```env
+TINIFY_KEY= #Tinify 压缩图片的key。如果不需要图片压缩则可以不写
 INTERNAL_NETWORK_DOMAIN=http://localhost:3000
 PUBLIC_NETWORK_DOMAIN=http://localhost:3000
 SERVER_PORT=3000
@@ -73,6 +74,7 @@ MYSQL_HOST=
 MYSQL_USER=root
 MYSQL_PASSWORD=
 MYSQL_PORT=3306
+```
 
 ### 创建表的字段说明
 
