@@ -164,7 +164,7 @@ router.get("/files", async (ctx) => {
       };
     }
 
-    const files = await File.findAll({
+    const { rows, count } = await File.findAndCountAll({
       where: {
         is_delete: false,
         is_public: true,
@@ -187,7 +187,10 @@ router.get("/files", async (ctx) => {
       ],
     });
 
-    ctx.body = files;
+    ctx.body = {
+      items: rows,
+      total: count,
+    };
   } catch (error) {
     ctx.status = 500;
     ctx.body = { message: "Error retrieving files", error: error.message };
