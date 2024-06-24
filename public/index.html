@@ -43,6 +43,12 @@
     .filter-buttons {
       margin-bottom: 20px;
     }
+
+    .pagination {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
   </style>
 </head>
 
@@ -54,11 +60,12 @@
     type="application/javascript"></script>
   <script>
     const { createApp, ref, onMounted } = Vue;
-    const { ElTabs, ElTabPane, ElUpload, ElButton, ElMessage, ElSelect, ElOption, ElImage, ElLoading } = ElementPlus;
+    const { ElTabs, ElTabPane, ElUpload, ElButton, ElMessage, ElSelect, ElOption, ElImage, ElLoading, ElPagination } = ElementPlus;
     const PUBLIC_NETWORK_DOMAIN = 'http://localhost:3000';
+    
     createApp({
       components: {
-        ElTabs, ElTabPane, ElUpload, ElButton, ElMessage, ElSelect, ElOption, ElImage, ElLoading
+        ElTabs, ElTabPane, ElUpload, ElButton, ElMessage, ElSelect, ElOption, ElImage, ElLoading, ElPagination
       },
       setup() {
         const uploadStatus = ref('');
@@ -66,17 +73,21 @@
         const fileType = ref('all');
         const loading = ref(false);
         const images = ref([]);
-        const activeTab = ref('1')
+        const activeTab = ref('1');
+        const imageTotal = ref(0);
+        const pageSize = ref(10);
+        const currentPage = ref(1);
 
-        const fetchImages = async () => {
+        const fetchImages = async (page = 1, size = 10) => {
           loading.value = true;
           try {
-            const response = await fetch(`${PUBLIC_NETWORK_DOMAIN}/files?type=${fileType.value}`);
-            const data = await response.json();
-            images.value = data.map(file => ({
+            const response = await fetch(`${PUBLIC_NETWORK_DOMAIN}/files?type=${fileType.value}&limit=${size}&offset=${(page - 1) * size}`);
+            const { total, items } = await response.json();
+            images.value = items.map(file => ({
               ...file,
               preview: `${file.thumb_location ?? file.filelocation}`
             }));
+            imageTotal.value = total;
           } catch (error) {
             ElMessage.error('获取图片列表失败');
           } finally {
@@ -96,7 +107,7 @@
             const data = await response.json();
             file.status = 'success';
             ElMessage.success(`${file.name} 上传成功`);
-            fetchImages();
+            fetchImages(currentPage.value, pageSize.value);
           } catch (error) {
             file.status = 'error';
             ElMessage.error(`${file.name} 上传失败`);
@@ -134,16 +145,26 @@
             }
           }
 
-          fetchImages();
+          fetchImages(currentPage.value, pageSize.value);
         };
 
         const handleFilterChange = (value) => {
           fileType.value = value;
-          fetchImages();
+          fetchImages(currentPage.value, pageSize.value);
+        };
+
+        const handleSizeChange = (size) => {
+          pageSize.value = size;
+          fetchImages(currentPage.value, size);
+        };
+
+        const handleCurrentChange = (page) => {
+          currentPage.value = page;
+          fetchImages(page, pageSize.value);
         };
 
         onMounted(() => {
-          fetchImages();
+          fetchImages(currentPage.value, pageSize.value);
         });
 
         return {
@@ -158,45 +179,61 @@
           loading,
           handleFilterChange,
           activeTab,
+          pageSize,
+          currentPage,
+          imageTotal,
+          handleSizeChange,
+          handleCurrentChange
         };
       },
       template: `
-                <el-tabs v-model="activeTab" >
-                    <el-tab-pane label="上传文件" name="1">
-                        <div 
-                            class="upload-area" 
-                            @dragover="handleDragover" 
-                            @dragleave="handleDragleave" 
-                            @drop="handleDrop">
-                            <p>拖拽文件到此处或点击上传</p>
-                            <el-upload 
-                                :multiple="true"
-                                :file-list="fileList"
-                                :http-request="handleUpload"
-                                drag>
-                                <el-button>选择文件</el-button>
-                            </el-upload>
-                        </div>
-                    </el-tab-pane>
-                    <el-tab-pane label="图床" name="2">
-                        <div class="filter-buttons">
-                            <el-select v-model="fileType" @change="handleFilterChange" placeholder="选择类型">
-                                <el-option label="全部" value="all"></el-option>
-                                <el-option label="图片" value="image"></el-option>
-                                <el-option label="视频" value="video"></el-option>
-                                <el-option label="文件" value="file"></el-option>
-                            </el-select>
-                        </div>
-                            <div class="waterfall">
-                                <div class="waterfall-item" v-for="(image, index) in images" :key="index">
-                                    <a target="_blank" :href="image.filelocation">
-                                        <el-image :src="image.preview" :alt="image.filename" fit="cover" />
-                                    </a>
-                                </div>
-                            </div>
-                    </el-tab-pane>
-                </el-tabs>
-            `
+        <el-tabs v-model="activeTab">
+          <el-tab-pane label="上传文件" name="1">
+            <div 
+              class="upload-area" 
+              @dragover="handleDragover" 
+              @dragleave="handleDragleave" 
+              @drop="handleDrop">
+              <p>拖拽文件到此处或点击上传</p>
+              <el-upload 
+                :multiple="true"
+                :file-list="fileList"
+                :http-request="handleUpload"
+                drag>
+                <el-button>选择文件</el-button>
+              </el-upload>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="图床" name="2">
+            <div class="filter-buttons">
+              <el-select v-model="fileType" @change="handleFilterChange" placeholder="选择类型">
+                <el-option label="全部" value="all"></el-option>
+                <el-option label="图片" value="image"></el-option>
+                <el-option label="视频" value="video"></el-option>
+                <el-option label="文件" value="file"></el-option>
+              </el-select>
+            </div>
+            <div class="waterfall">
+              <p class="waterfall-item" v-for="(image, index) in images" :key="index">
+                  <a target="_blank" :href="image.filelocation">
+                    <el-image :src="image.preview" :alt="image.filename" fit="cover" />
+                  </a>
+              </p>
+            </div>
+            <div class="pagination">
+              <el-pagination
+                background
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="imageTotal"
+                :page-size="pageSize"
+                :current-page="currentPage"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange">
+              </el-pagination>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      `
     }).mount('#app');
   </script>
 </body>
