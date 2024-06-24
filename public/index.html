@@ -89,7 +89,7 @@
           formData.append('file', file);
 
           try {
-            const response = await fetch(`${PUBLIC_NETWORK_DOMAIN}/upload?type=md&compress=false&isThumb=true&isPublic=true`, {
+            const response = await fetch(`${PUBLIC_NETWORK_DOMAIN}/files?type=md&compress=false&isThumb=true&isPublic=true`, {
               method: 'POST',
               body: formData,
             });

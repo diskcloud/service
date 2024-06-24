@@ -44,7 +44,7 @@ const getDefaultThumbPath = (mime) => {
 };
 
 // 处理文件上传
-router.post("/upload", async (ctx) => {
+router.post("/files", async (ctx) => {
   try {
     const files = ctx.request.files.file;
     const fileList = Array.isArray(files) ? files : [files];
@@ -83,7 +83,7 @@ router.post("/upload", async (ctx) => {
         }
       }
 
-      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}`;
+      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}/preview`;
       const thumbUrl = shouldGenerateThumb ? `${fileUrl}?type=thumb` : null;
 
       await File.create({
@@ -118,7 +118,7 @@ router.post("/upload", async (ctx) => {
         await fsp.unlink(file.filepath);
       }
     }
-
+    ctx.status(201);
     ctx.body = fileList.length > 1 ? responses : responses[0];
   } catch (error) {
     ctx.status = 500;
@@ -198,6 +198,56 @@ router.get("/files", async (ctx) => {
 // 获取单个文件信息
 router.get("/files/:id", async (ctx) => {
   const { id } = ctx.params;
+
+  try {
+    const file = await File.findOne({
+      where: {
+        id,
+        is_delete: false,
+        is_public: true,
+        [Op.or]: [
+          { public_expiration: null },
+          { public_expiration: { [Op.gt]: new Date() } },
+        ],
+      },
+      attributes: [
+        "id",
+        "filename",
+        "is_delete",
+        "is_public",
+        "public_expiration",
+        "is_thumb",
+        "filesize",
+        "filelocation",
+        "thumb_location",
+        "mime",
+        "ext",
+        "created_at",
+        "created_by",
+        "updated_at",
+        "updated_by",
+      ],
+    });
+
+    if (!file) {
+      ctx.status = 404;
+      ctx.body = { message: "File not found or not accessible" };
+      return;
+    }
+
+    ctx.body = file;
+
+    // 返回文件流
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = { message: "Internal server error", error: error.message };
+    console.error("Get file error:", error);
+  }
+});
+
+// 文件预览
+router.get("/files/:id/preview", async (ctx) => {
+  const { id } = ctx.params;
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
 
   try {
@@ -259,7 +309,60 @@ router.get("/files/:id", async (ctx) => {
   }
 });
 
-router.get("/files:export", async (ctx) => {
+// 单文件下载
+router.get("/files/:id/export", async (ctx) => {
+  const { id } = ctx.params;
+
+  try {
+    const file = await File.findOne({
+      where: {
+        id: id,
+        is_delete: false,
+        [Op.or]: [
+          { public_expiration: null },
+          { public_expiration: { [Op.gt]: new Date() } },
+        ],
+      },
+      attributes: ["filename", "real_file_location", "ext"],
+    });
+
+    if (!file) {
+      ctx.status = 404;
+      ctx.body = { message: "No valid files found for the provided id" };
+      return;
+    }
+    // 单文件下载
+    const filePath = file.real_file_location;
+    const fileName = file.filename;
+
+    // 检查文件是否存在
+    try {
+      await fsp.access(filePath);
+    } catch (err) {
+      ctx.status = 404;
+      ctx.body = { message: "File not found" };
+      return;
+    }
+    const { mime } = await detectFileType(filePath);
+
+    // 设置响应头
+    ctx.set("Content-Type", mime);
+    ctx.set("Content-Disposition", `attachment; filename="${fileName}"`);
+
+    // 返回文件流
+    ctx.body = fs.createReadStream(filePath);
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = {
+      message: "Error processing your download request",
+      error: error.message,
+    };
+    console.error("Download error:", error);
+  }
+});
+
+// 批量下载
+router.get("/files/export", async (ctx) => {
   const fileIds = ctx.query.ids ? ctx.query.ids.split(",") : [];
 
   if (fileIds.length === 0) {
