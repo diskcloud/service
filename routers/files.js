@@ -7,7 +7,7 @@ const tinify = require("tinify");
 const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
 const { detectFileType } = require("../utils/detectFileType");
-const File = require("../models/files");
+const Files = require("../models/files");
 const JSZip = require("jszip");
 const {
   imageMimeTypes,
@@ -86,7 +86,7 @@ router.post("/files", async (ctx) => {
       const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}/preview`;
       const thumbUrl = shouldGenerateThumb ? `${fileUrl}?type=thumb` : null;
 
-      await File.create({
+      await Files.create({
         id: fileId,
         filename: path.basename(realFilePath),
         filesize: (await fsp.stat(realFilePath)).size,
@@ -164,7 +164,7 @@ router.get("/files", async (ctx) => {
       };
     }
 
-    const { rows, count } = await File.findAndCountAll({
+    const { rows, count } = await Files.findAndCountAll({
       where: {
         is_delete: false,
         is_public: true,
@@ -203,7 +203,7 @@ router.get("/files/:id", async (ctx) => {
   const { id } = ctx.params;
 
   try {
-    const file = await File.findOne({
+    const file = await Files.findOne({
       where: {
         id,
         is_delete: false,
@@ -254,7 +254,7 @@ router.get("/files/:id/preview", async (ctx) => {
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
 
   try {
-    const file = await File.findOne({
+    const file = await Files.findOne({
       where: {
         id,
         is_delete: false,
@@ -317,7 +317,7 @@ router.get("/files/:id/export", async (ctx) => {
   const { id } = ctx.params;
 
   try {
-    const file = await File.findOne({
+    const file = await Files.findOne({
       where: {
         id: id,
         is_delete: false,
@@ -375,7 +375,7 @@ router.get("/files/export", async (ctx) => {
   }
 
   try {
-    const files = await File.findAll({
+    const files = await Files.findAll({
       where: {
         id: { [Op.in]: fileIds },
         is_delete: false,
