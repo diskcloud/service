@@ -16,6 +16,8 @@ nodejs 实现文件上传功能
 | 公开失效时间 | 否             | 否             | 是           |
 | 高级搜索功能 | 否             | 否             | 是           |
 
+[![YouTube](https://img.youtube.com/vi/5w1dCYBrf2k/0.jpg)](https://youtu.be/5w1dCYBrf2k)
+
 ### 使用方法
 
 ```shell
