@@ -89,8 +89,8 @@ router.post("/files", async (ctx) => {
       await Files.create({
         id: fileId,
         filename: path.basename(realFilePath),
-        filesize: (await fsp.stat(realFilePath)).size,
-        filelocation: fileUrl,
+        file_size: (await fsp.stat(realFilePath)).size,
+        file_location: fileUrl,
         real_file_location: realFilePath,
         created_by: ctx.query.createdBy || "anonymous",
         is_public: isFilePublic,
@@ -179,9 +179,9 @@ router.get("/files", async (ctx) => {
         "public_expiration",
         "updated_at",
         "updated_by",
-        "filesize",
+        "file_size",
         "filename",
-        "filelocation",
+        "file_location",
         "thumb_location",
         "is_public",
       ],
@@ -216,12 +216,11 @@ router.get("/files/:id", async (ctx) => {
       attributes: [
         "id",
         "filename",
-        "is_delete",
         "is_public",
         "public_expiration",
         "is_thumb",
-        "filesize",
-        "filelocation",
+        "file_size",
+        "file_location",
         "thumb_location",
         "mime",
         "ext",
@@ -248,6 +247,69 @@ router.get("/files/:id", async (ctx) => {
   }
 });
 
+// 编辑文件信息接口
+router.put('/files/:id', async (ctx) => {
+  const { id } = ctx.params;
+  const {
+    filename,
+    is_public,
+    updated_by,
+    public_expiration,
+    public_by,
+  } = ctx.request.body;
+
+  try {
+    // 查找文件
+    const file = await Files.findOne({
+      where: {
+        id,
+        is_delete: false,
+      }
+    });
+
+    if (!file) {
+      ctx.status = 404;
+      ctx.body = { message: 'File not found' };
+      return;
+    }
+
+    // 更新文件信息
+    await file.update({
+      filename,
+      is_public,
+      updated_by,
+      updated_at: new Date(),
+      public_expiration,
+      public_by,
+    });
+
+    const updatedFile = {
+      id: file.id,
+      filename: file.filename,
+      is_public: file.is_public,
+      public_expiration: file.public_expiration,
+      is_thumb: file.is_thumb,
+      file_size: file.file_size,
+      file_location: file.file_location,
+      thumb_location: file.thumb_location,
+      mime: file.mime,
+      ext: file.ext,
+      created_at: file.created_at,
+      created_by: file.created_by,
+      updated_at: file.updated_at,
+      updated_by: file.updated_by,
+    };
+
+    // 返回更新后的文件信息
+    ctx.body = updatedFile;
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = { message: 'Error updating file information', error: error.message };
+    console.error('Update file error:', error);
+  }
+});
+
+
 // 文件预览
 router.get("/files/:id/preview", async (ctx) => {
   const { id } = ctx.params;
@@ -266,7 +328,6 @@ router.get("/files/:id/preview", async (ctx) => {
       },
       attributes: [
         "filename",
-        "is_delete",
         "is_public",
         "public_expiration",
         "real_file_location",

@@ -86,8 +86,8 @@ MYSQL_PORT=3306
 CREATE TABLE files (
     id VARCHAR(50) DEFAULT NULL,
     filename VARCHAR(255) NOT NULL,
-    filesize BIGINT(20) NOT NULL,
-    filelocation VARCHAR(255) NOT NULL,
+    file_size BIGINT(20) NOT NULL,
+    file_location VARCHAR(255) NOT NULL,
     created_by VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_by VARCHAR(255) DEFAULT NULL,
@@ -109,8 +109,8 @@ CREATE TABLE files (
 |------------------|----------------|----------|----------------------|----------------------------------------------|
 | `id`             | int(11)        | NOT NULL |                      | 文件的唯一标识                                 |
 | `filename`       | varchar(255)   | NOT NULL |                      | 文件名                                       |
-| `filesize`       | bigint(20)     | NOT NULL |                      | 文件大小（以字节为单位）                      |
-| `filelocation`   | varchar(255)   | NOT NULL |                      | 文件存储的位置                               |
+| `file_size`       | bigint(20)     | NOT NULL |                      | 文件大小（以字节为单位）                      |
+| `file_location`   | varchar(255)   | NOT NULL |                      | 文件存储的位置                               |
 | `created_by`     | varchar(255)   | NOT NULL |                      | 创建该文件的用户                             |
 | `created_at`     | timestamp      | NULL     | CURRENT_TIMESTAMP    | 文件的创建时间，默认当前时间                   |
 | `updated_by`     | varchar(255)   | NULL     | NULL                 | 最近更新该文件的用户                         |

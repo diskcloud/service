@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../utils/dbInstance'); // 修改为实际的sequelize实例路径
-const File = sequelize.define('File', {
+const Files = sequelize.define('Files', {
   id: {
     type: DataTypes.STRING(50),
     allowNull: false, // 必须为 NOT NULL
@@ -10,11 +10,11 @@ const File = sequelize.define('File', {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
-  filesize: {
+  file_size: {
     type: DataTypes.BIGINT,
     allowNull: false,
   },
-  filelocation: {
+  file_location: {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
@@ -96,4 +96,4 @@ const File = sequelize.define('File', {
   collate: 'utf8mb4_general_ci',
 });
 
-module.exports = File;
+module.exports = Files;
