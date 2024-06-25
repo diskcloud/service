@@ -118,7 +118,7 @@ router.post("/files", async (ctx) => {
         await fsp.unlink(file.filepath);
       }
     }
-    ctx.status(201);
+    ctx.status = 201;
     ctx.body = fileList.length > 1 ? responses : responses[0];
   } catch (error) {
     ctx.status = 500;
@@ -309,6 +309,86 @@ router.put('/files/:id', async (ctx) => {
   }
 });
 
+// 文件删除接口
+router.delete('/files/:id', async (ctx) => {
+  const { id } = ctx.params;
+
+  try {
+    // 查找文件
+    const file = await Files.findOne({
+      where: {
+        id,
+        is_delete: false,
+      }
+    });
+
+    if (!file) {
+      ctx.status = 404;
+      ctx.body = { message: 'File not found' };
+      return;
+    }
+
+    // 执行软删除，将 is_delete 字段设置为 true
+    await file.update({
+      is_delete: true,
+      updated_at: new Date(), // 更新更新时间
+      updated_by: ctx.query.updated_by || 'anonymous' // 可以通过查询参数传递更新者
+    });
+
+    // 返回删除成功的信息
+    ctx.status = 204;
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = { message: 'Error deleting file', error: error.message };
+    console.error('Delete file error:', error);
+  }
+});
+
+// 文件批量删除接口
+router.delete('/files', async (ctx) => {
+  const { ids } = ctx.request.body; // 获取要删除的文件 ID 列表
+  const updated_by = ctx.query.updated_by || 'anonymous'; // 获取更新者，默认为匿名
+  console.log(ctx.request.body);
+  console.log(JSON.stringify(ctx.request.body));
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    ctx.status = 400;
+    ctx.body = { message: 'No file ids provided for deletion' };
+    return;
+  }
+
+  try {
+    // 查找并更新指定的文件
+    const [numberOfAffectedRows] = await Files.update(
+      { 
+        is_delete: true,
+        updated_by: updated_by,
+        updated_at: new Date(),
+      },
+      {
+        where: {
+          id: {
+            [Op.in]: ids,
+          },
+          is_delete: false,
+        },
+      }
+    );
+
+    if (numberOfAffectedRows === 0) {
+      ctx.status = 404;
+      ctx.body = { message: 'No files found to delete' };
+      return;
+    }
+
+    // 返回删除成功的信息
+    ctx.status = 204;
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = { message: 'Error deleting files', error: error.message };
+    console.error('Delete files error:', error);
+  }
+});
 
 // 文件预览
 router.get("/files/:id/preview", async (ctx) => {
@@ -426,10 +506,10 @@ router.get("/files/:id/export", async (ctx) => {
 });
 
 // 批量下载
-router.get("/files/export", async (ctx) => {
-  const fileIds = ctx.query.ids ? ctx.query.ids.split(",") : [];
+router.get("/files/export/batch", async (ctx) => {
+  const ids = ctx.query.ids ? ctx.query.ids.split(",") : [];
 
-  if (fileIds.length === 0) {
+  if (ids.length === 0) {
     ctx.status = 400;
     ctx.body = { message: "No file ids provided for download" };
     return;
@@ -438,7 +518,7 @@ router.get("/files/export", async (ctx) => {
   try {
     const files = await Files.findAll({
       where: {
-        id: { [Op.in]: fileIds },
+        id: { [Op.in]: ids },
         is_delete: false,
         [Op.or]: [
           { public_expiration: null },
