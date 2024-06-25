@@ -85,7 +85,7 @@
             const { total, items } = await response.json();
             images.value = items.map(file => ({
               ...file,
-              preview: `${file.thumb_location ?? file.filelocation}`
+              preview: `${file.thumb_location ?? file.file_location}`
             }));
             imageTotal.value = total;
           } catch (error) {
@@ -215,7 +215,7 @@
             </div>
             <div class="waterfall">
               <p class="waterfall-item" v-for="(image, index) in images" :key="index">
-                  <a target="_blank" :href="image.filelocation">
+                  <a target="_blank" :href="image.file_location">
                     <el-image :src="image.preview" :alt="image.filename" fit="cover" />
                   </a>
               </p>
