@@ -13,6 +13,8 @@ const {
   imageMimeTypes,
   tinifySupportedMimeTypes,
 } = require("../constants/file");
+const { FILES_UPLOAD_POST_QUERY, FILES_LIST_GET_QUERY, FILES_REST_ID, FILES_BODY_BATCH_IDS } = require("../types/schema/files");
+const { validateQuery, validateBody, validateFormData, validateParams } = require("../types");
 
 tinify.key = process.env.TINIFY_KEY;
 
@@ -44,17 +46,17 @@ const getDefaultThumbPath = (mime) => {
 };
 
 // 处理文件上传
-router.post("/files", async (ctx) => {
+router.post("/files", validateFormData, validateQuery(FILES_UPLOAD_POST_QUERY), async (ctx) => {
   try {
     const files = ctx.request.files.file;
     const fileList = Array.isArray(files) ? files : [files];
     const responses = [];
+    const { compress, keepTemp, isThumb, isPublic, type: responseType } = ctx.query;
 
-    const shouldCompress = ctx.query.compress !== "false";
-    const shouldKeepTemp = ctx.query.keepTemp === "true";
-    const shouldGenerateThumb = ctx.query.isThumb === "true";
-    const isFilePublic = ctx.query.isPublic === "true";
-    const responseType = ctx.query.type;
+    const shouldCompress = compress === 'true';
+    const shouldKeepTemp = keepTemp === 'true';
+    const shouldGenerateThumb = isThumb === 'true';
+    const isFilePublic = isPublic === 'true';
 
     for (const file of fileList) {
       const fileId = uuidv4();
@@ -65,16 +67,20 @@ router.post("/files", async (ctx) => {
       let realThumbPath = null;
 
       if (shouldGenerateThumb && imageMimeTypes.includes(mime)) {
+        console.time('thumb')
         realThumbPath = getRealThumbPath(fileId);
         await sharp(file.filepath)
           .resize(200, 200)
           .toFile(realThumbPath);
+        console.timeEnd('thumb');
       } else if (shouldGenerateThumb) {
         realThumbPath = getDefaultThumbPath(mime);
       }
 
       if (shouldCompress && tinifySupportedMimeTypes.includes(mime)) {
+        console.time('compress')
         await tinify.fromFile(file.filepath).toFile(realFilePath);
+        console.timeEnd('compress')
       } else {
         if (shouldKeepTemp) {
           await fsp.copyFile(file.filepath, realFilePath);
@@ -131,7 +137,8 @@ router.post("/files", async (ctx) => {
 });
 
 // 获取文件列表
-router.get("/files", async (ctx) => {
+router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
+  console.log(ctx.query);
   try {
     const limit = parseInt(ctx.query.limit, 10) || 10; // 每页数量，默认为 10
     const offset = parseInt(ctx.query.offset, 10) || 0; // 偏移量，默认为 0
@@ -199,7 +206,7 @@ router.get("/files", async (ctx) => {
 });
 
 // 获取单个文件信息
-router.get("/files/:id", async (ctx) => {
+router.get("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
 
   try {
@@ -248,7 +255,7 @@ router.get("/files/:id", async (ctx) => {
 });
 
 // 编辑文件信息接口
-router.put('/files/:id', async (ctx) => {
+router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
   const {
     filename,
@@ -264,12 +271,12 @@ router.put('/files/:id', async (ctx) => {
       where: {
         id,
         is_delete: false,
-      }
+      },
     });
 
     if (!file) {
       ctx.status = 404;
-      ctx.body = { message: 'File not found' };
+      ctx.body = { message: "File not found" };
       return;
     }
 
@@ -304,13 +311,16 @@ router.put('/files/:id', async (ctx) => {
     ctx.body = updatedFile;
   } catch (error) {
     ctx.status = 500;
-    ctx.body = { message: 'Error updating file information', error: error.message };
-    console.error('Update file error:', error);
+    ctx.body = {
+      message: "Error updating file information",
+      error: error.message,
+    };
+    console.error("Update file error:", error);
   }
 });
 
 // 文件删除接口
-router.delete('/files/:id', async (ctx) => {
+router.delete("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
 
   try {
@@ -319,12 +329,12 @@ router.delete('/files/:id', async (ctx) => {
       where: {
         id,
         is_delete: false,
-      }
+      },
     });
 
     if (!file) {
       ctx.status = 404;
-      ctx.body = { message: 'File not found' };
+      ctx.body = { message: "File not found" };
       return;
     }
 
@@ -332,35 +342,35 @@ router.delete('/files/:id', async (ctx) => {
     await file.update({
       is_delete: true,
       updated_at: new Date(), // 更新更新时间
-      updated_by: ctx.query.updated_by || 'anonymous' // 可以通过查询参数传递更新者
+      updated_by: ctx.query.updated_by || "anonymous", // 可以通过查询参数传递更新者
     });
 
     // 返回删除成功的信息
     ctx.status = 204;
   } catch (error) {
     ctx.status = 500;
-    ctx.body = { message: 'Error deleting file', error: error.message };
-    console.error('Delete file error:', error);
+    ctx.body = { message: "Error deleting file", error: error.message };
+    console.error("Delete file error:", error);
   }
 });
 
 // 文件批量删除接口
-router.delete('/files', async (ctx) => {
+router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
   const { ids } = ctx.request.body; // 获取要删除的文件 ID 列表
-  const updated_by = ctx.query.updated_by || 'anonymous'; // 获取更新者，默认为匿名
+  const updated_by = ctx.query.updated_by || "anonymous"; // 获取更新者，默认为匿名
   console.log(ctx.request.body);
   console.log(JSON.stringify(ctx.request.body));
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
     ctx.status = 400;
-    ctx.body = { message: 'No file ids provided for deletion' };
+    ctx.body = { message: "No file ids provided for deletion" };
     return;
   }
 
   try {
     // 查找并更新指定的文件
     const [numberOfAffectedRows] = await Files.update(
-      { 
+      {
         is_delete: true,
         updated_by: updated_by,
         updated_at: new Date(),
@@ -377,7 +387,7 @@ router.delete('/files', async (ctx) => {
 
     if (numberOfAffectedRows === 0) {
       ctx.status = 404;
-      ctx.body = { message: 'No files found to delete' };
+      ctx.body = { message: "No files found to delete" };
       return;
     }
 
@@ -385,13 +395,13 @@ router.delete('/files', async (ctx) => {
     ctx.status = 204;
   } catch (error) {
     ctx.status = 500;
-    ctx.body = { message: 'Error deleting files', error: error.message };
-    console.error('Delete files error:', error);
+    ctx.body = { message: "Error deleting files", error: error.message };
+    console.error("Delete files error:", error);
   }
 });
 
 // 文件预览
-router.get("/files/:id/preview", async (ctx) => {
+router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
 
@@ -454,7 +464,7 @@ router.get("/files/:id/preview", async (ctx) => {
 });
 
 // 单文件下载
-router.get("/files/:id/export", async (ctx) => {
+router.get("/files/:id/download", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
 
   try {
@@ -506,8 +516,8 @@ router.get("/files/:id/export", async (ctx) => {
 });
 
 // 批量下载
-router.get("/files/export/batch", async (ctx) => {
-  const ids = ctx.query.ids ? ctx.query.ids.split(",") : [];
+router.post("/files/download", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
+  const ids = ctx.request.body.ids;
 
   if (ids.length === 0) {
     ctx.status = 400;
