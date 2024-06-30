@@ -2,10 +2,11 @@
 function validateQuery(schema) {
   return async function(ctx, next) {
     try {
+      if (!schema) return (ctx.status = 400);
       const validated = await schema.validateAsync(ctx.query, {
         allowUnknown: true,
         convert: true,
-        stripUnknown: true
+        stripUnknown: true,
       });
       ctx.query = validated;
       await next();
@@ -25,6 +26,8 @@ function validateQuery(schema) {
 function validateBody(schema) {
   return async function(ctx, next) {
     try {
+      if (!schema) return (ctx.status = 400);
+
       const validated = await schema.validateAsync(ctx.request.body, {
         allowUnknown: true,
         convert: true,
@@ -55,7 +58,7 @@ async function validateFormData(ctx, next) {
     await next();
   } catch (err) {
     ctx.status = 400;
-    ctx.body = { message: 'Validation Error', error: err.message };
+    ctx.body = { message: "Validation Error", error: err.message };
     return;
   }
 }
@@ -63,10 +66,11 @@ async function validateFormData(ctx, next) {
 function validateParams(schema) {
   return async function(ctx, next) {
     try {
+      if (!schema) return (ctx.status = 400);
       const validated = await schema.validateAsync(ctx.params, {
         allowUnknown: true,
         convert: true,
-        stripUnknown: true
+        stripUnknown: true,
       });
       ctx.params = validated;
       await next();
@@ -84,5 +88,5 @@ module.exports = {
   validateBody,
   validateQuery,
   validateFormData,
-  validateParams
+  validateParams,
 };
