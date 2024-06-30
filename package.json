@@ -1,6 +1,6 @@
 {
-  "name": "upload-file-server",
-  "version": "1.1.0",
+  "name": "diskcloud-service",
+  "version": "2.0.0",
   "main": "index.js",
   "license": "MIT",
   "engines": {
@@ -15,9 +15,11 @@
   "dependencies": {
     "@koa/cors": "^5.0.0",
     "axios": "^1.7.2",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "file-type": "^19.0.0",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "koa": "^2.15.3",
     "koa-body": "^6.0.1",
@@ -27,6 +29,7 @@
     "mysql2": "^3.10.1",
     "nodemon": "^3.1.4",
     "pm2": "^5.4.0",
+    "redis": "^4.6.13",
     "sequelize": "^6.37.3",
     "sharp": "0.31.0",
     "tinify": "^1.7.1",
