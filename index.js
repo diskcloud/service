@@ -8,10 +8,18 @@ const filesRouter = require("./routers/files");
 const usersRouter = require("./routers/users");
 const redisClient = require("./redis");
 const authenticateToken = require("./middleware/authenticateToken");
+const cors = require("@koa/cors");
 
 require("dotenv").config({ path: ".env.local" });
 
 const app = new Koa();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173/", // 允许的来源
+    allowMethods: ["GET", "POST"], // 允许的方法
+  })
+);
 
 app.use(require("koa-static")(path.join(__dirname, "public")));
 

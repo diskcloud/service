@@ -1505,7 +1505,7 @@ koa-static@^5.0.0:
 
 koa2-cors@^2.0.6:
   version "2.0.6"
-  resolved "https://registry.npmmirror.com/koa2-cors/-/koa2-cors-2.0.6.tgz"
+  resolved "https://registry.yarnpkg.com/koa2-cors/-/koa2-cors-2.0.6.tgz#9ad23df3a0b9bb84530b46f5944f3fb576086554"
   integrity sha512-JRCcSM4lamM+8kvKGDKlesYk2ASrmSTczDtGUnIadqMgnHU4Ct5Gw7Bxt3w3m6d6dy3WN0PU4oMP43HbddDEWg==
 
 koa@^2.15.3:
@@ -1909,6 +1909,11 @@ path-to-regexp@^6.2.1:
   version "6.2.2"
   resolved "https://registry.npmmirror.com/path-to-regexp/-/path-to-regexp-6.2.2.tgz"
   integrity sha512-GQX3SSMokngb36+whdpRXE+3f9V8UzyAorlYvOGx87ufGHehNTn5lCxrKtLyZ4Yl/wEKnNnr98ZzOwwDZV5ogw==
+
+path-to-regexp@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-7.0.0.tgz#0222f42e986de6b63e6bbc6dab6a79f5311b9abb"
+  integrity sha512-58Y94bQqF3zBIASFNiufRPH1NfgZth1qwZ35radL87sg8pgbVqr6uikAhqZtFD+w65MGH6SWnY/ly3GbrM4fbg==
 
 peek-readable@^5.0.0:
   version "5.0.0"
