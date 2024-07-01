@@ -198,12 +198,17 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
     const { rows, count } = await Files.findAndCountAll({
       where: {
         is_delete: false,
-        is_public: true,
+        [Op.or]: [
+          { public_expiration: null, is_public: true },
+          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+          { created_by: ctx.state.user.id },
+        ],
         ...mimeCondition,
       },
       limit,
       offset,
       attributes: [
+        "id",
         "created_by",
         "created_at",
         "public_by",
@@ -238,10 +243,10 @@ router.get("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
-        is_public: true,
         [Op.or]: [
-          { public_expiration: null },
-          { public_expiration: { [Op.gt]: new Date() } },
+          { public_expiration: null, is_public: true },
+          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+          { created_by: ctx.state.user.id },
         ],
       },
       attributes: [
@@ -294,6 +299,7 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
+        created_by: ctx.state.user.id,
       },
     });
 
@@ -401,6 +407,7 @@ router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
           id: {
             [Op.in]: ids,
           },
+          created_by: ctx.state.user.id,
           is_delete: false,
         },
       }
@@ -431,10 +438,10 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
-        is_public: true,
         [Op.or]: [
-          { public_expiration: null },
-          { public_expiration: { [Op.gt]: new Date() } },
+          { public_expiration: null, is_public: true },
+          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+          { created_by: ctx.state.user.id },
         ],
       },
       attributes: [
@@ -497,8 +504,9 @@ router.get(
           id: id,
           is_delete: false,
           [Op.or]: [
-            { public_expiration: null },
-            { public_expiration: { [Op.gt]: new Date() } },
+            { public_expiration: null, is_public: true },
+            { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+            { created_by: ctx.state.user.id },
           ],
         },
         attributes: ["filename", "real_file_location", "ext"],
@@ -559,8 +567,9 @@ router.post(
           id: { [Op.in]: ids },
           is_delete: false,
           [Op.or]: [
-            { public_expiration: null },
-            { public_expiration: { [Op.gt]: new Date() } },
+            { public_expiration: null, is_public: true },
+            { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+            { created_by: ctx.state.user.id },
           ],
         },
         attributes: ["filename", "real_file_location", "ext"],
