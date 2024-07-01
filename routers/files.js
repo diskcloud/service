@@ -13,8 +13,18 @@ const {
   imageMimeTypes,
   tinifySupportedMimeTypes,
 } = require("../constants/file");
-const { FILES_UPLOAD_POST_QUERY, FILES_LIST_GET_QUERY, FILES_REST_ID, FILES_BODY_BATCH_IDS } = require("../types/schema/files");
-const { validateQuery, validateBody, validateFormData, validateParams } = require("../types");
+const {
+  FILES_UPLOAD_POST_QUERY,
+  FILES_LIST_GET_QUERY,
+  FILES_REST_ID,
+  FILES_BODY_BATCH_IDS,
+} = require("../types/schema/files");
+const {
+  validateQuery,
+  validateBody,
+  validateFormData,
+  validateParams,
+} = require("../types");
 
 tinify.key = process.env.TINIFY_KEY;
 
@@ -46,95 +56,109 @@ const getDefaultThumbPath = (mime) => {
 };
 
 // 处理文件上传
-router.post("/files", validateFormData, validateQuery(FILES_UPLOAD_POST_QUERY), async (ctx) => {
-  try {
-    const files = ctx.request.files.file;
-    const fileList = Array.isArray(files) ? files : [files];
-    const responses = [];
-    const { compress, keepTemp, isThumb, isPublic, type: responseType } = ctx.query;
+router.post(
+  "/files",
+  validateFormData,
+  validateQuery(FILES_UPLOAD_POST_QUERY),
+  async (ctx) => {
+    try {
+      const files = ctx.request.files.file;
+      const fileList = Array.isArray(files) ? files : [files];
+      const responses = [];
+      const {
+        compress,
+        keepTemp,
+        isThumb,
+        isPublic,
+        type: responseType,
+      } = ctx.query;
 
-    const shouldCompress = compress === 'true';
-    const shouldKeepTemp = keepTemp === 'true';
-    const shouldGenerateThumb = isThumb === 'true';
-    const isFilePublic = isPublic === 'true';
+      const shouldCompress = compress === "true";
+      const shouldKeepTemp = keepTemp === "true";
+      const shouldGenerateThumb = isThumb === "true";
+      const isFilePublic = isPublic === "true";
 
-    for (const file of fileList) {
-      const fileId = uuidv4();
-      const ext = path.extname(file.filepath);
-      const realFilePath = getRealFilePath(fileId, ext);
+      for (const file of fileList) {
+        const fileId = uuidv4();
+        const ext = path.extname(file.filepath);
+        const realFilePath = getRealFilePath(fileId, ext);
 
-      const { mime, ext: fileExt } = await detectFileType(file.filepath, file);
-      let realThumbPath = null;
+        const { mime, ext: fileExt } = await detectFileType(
+          file.filepath,
+          file
+        );
+        let realThumbPath = null;
 
-      if (shouldGenerateThumb && imageMimeTypes.includes(mime)) {
-        console.time('thumb')
-        realThumbPath = getRealThumbPath(fileId);
-        await sharp(file.filepath)
-          .resize(200, 200)
-          .toFile(realThumbPath);
-        console.timeEnd('thumb');
-      } else if (shouldGenerateThumb) {
-        realThumbPath = getDefaultThumbPath(mime);
-      }
+        if (shouldGenerateThumb && imageMimeTypes.includes(mime)) {
+          console.time("thumb");
+          realThumbPath = getRealThumbPath(fileId);
+          await sharp(file.filepath)
+            .resize(200, 200)
+            .toFile(realThumbPath);
+          console.timeEnd("thumb");
+        } else if (shouldGenerateThumb) {
+          realThumbPath = getDefaultThumbPath(mime);
+        }
 
-      if (shouldCompress && tinifySupportedMimeTypes.includes(mime)) {
-        console.time('compress')
-        await tinify.fromFile(file.filepath).toFile(realFilePath);
-        console.timeEnd('compress')
-      } else {
-        if (shouldKeepTemp) {
-          await fsp.copyFile(file.filepath, realFilePath);
+        if (shouldCompress && tinifySupportedMimeTypes.includes(mime)) {
+          console.time("compress");
+          await tinify.fromFile(file.filepath).toFile(realFilePath);
+          console.timeEnd("compress");
         } else {
-          await fsp.rename(file.filepath, realFilePath);
+          if (shouldKeepTemp) {
+            await fsp.copyFile(file.filepath, realFilePath);
+          } else {
+            await fsp.rename(file.filepath, realFilePath);
+          }
+        }
+
+        const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}/preview`;
+        const thumbUrl = shouldGenerateThumb ? `${fileUrl}?type=thumb` : null;
+
+        await Files.create({
+          id: fileId,
+          filename: path.basename(realFilePath),
+          file_size: (await fsp.stat(realFilePath)).size,
+          file_location: fileUrl,
+          real_file_location: realFilePath,
+          created_by: ctx.state.user.id,
+          is_public: isFilePublic,
+          thumb_location: thumbUrl,
+          is_thumb: shouldGenerateThumb,
+          is_delete: false,
+          real_file_thumb_location: realThumbPath,
+          mime,
+          ext: fileExt,
+        });
+
+        const response = { filepath: fileUrl };
+        if (responseType === "md" && imageMimeTypes.includes(mime)) {
+          response.filepath = `![${path.basename(realFilePath)}](${fileUrl})`;
+        }
+        responses.push(response);
+
+        if (
+          !shouldKeepTemp &&
+          (await fsp
+            .access(file.filepath)
+            .then(() => true)
+            .catch(() => false))
+        ) {
+          await fsp.unlink(file.filepath);
         }
       }
-
-      const fileUrl = `${process.env.PUBLIC_NETWORK_DOMAIN}/files/${fileId}/preview`;
-      const thumbUrl = shouldGenerateThumb ? `${fileUrl}?type=thumb` : null;
-
-      await Files.create({
-        id: fileId,
-        filename: path.basename(realFilePath),
-        file_size: (await fsp.stat(realFilePath)).size,
-        file_location: fileUrl,
-        real_file_location: realFilePath,
-        created_by: ctx.query.createdBy || "anonymous",
-        is_public: isFilePublic,
-        thumb_location: thumbUrl,
-        is_thumb: shouldGenerateThumb,
-        is_delete: false,
-        real_file_thumb_location: realThumbPath,
-        mime,
-        ext: fileExt,
-      });
-
-      const response = { filepath: fileUrl };
-      if (responseType === "md" && imageMimeTypes.includes(mime)) {
-        response.filepath = `![${path.basename(realFilePath)}](${fileUrl})`;
-      }
-      responses.push(response);
-
-      if (
-        !shouldKeepTemp &&
-        (await fsp
-          .access(file.filepath)
-          .then(() => true)
-          .catch(() => false))
-      ) {
-        await fsp.unlink(file.filepath);
-      }
+      ctx.status = 201;
+      ctx.body = fileList.length > 1 ? responses : responses[0];
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        message: "Error processing your request",
+        error: error.message,
+      };
+      console.error("Upload error:", error);
     }
-    ctx.status = 201;
-    ctx.body = fileList.length > 1 ? responses : responses[0];
-  } catch (error) {
-    ctx.status = 500;
-    ctx.body = {
-      message: "Error processing your request",
-      error: error.message,
-    };
-    console.error("Upload error:", error);
   }
-});
+);
 
 // 获取文件列表
 router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
@@ -174,12 +198,17 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
     const { rows, count } = await Files.findAndCountAll({
       where: {
         is_delete: false,
-        is_public: true,
+        [Op.or]: [
+          { public_expiration: null, is_public: true },
+          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+          { created_by: ctx.state.user.id },
+        ],
         ...mimeCondition,
       },
       limit,
       offset,
       attributes: [
+        "id",
         "created_by",
         "created_at",
         "public_by",
@@ -214,10 +243,10 @@ router.get("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
-        is_public: true,
         [Op.or]: [
-          { public_expiration: null },
-          { public_expiration: { [Op.gt]: new Date() } },
+          { public_expiration: null, is_public: true },
+          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+          { created_by: ctx.state.user.id },
         ],
       },
       attributes: [
@@ -260,7 +289,6 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
   const {
     filename,
     is_public,
-    updated_by,
     public_expiration,
     public_by,
   } = ctx.request.body;
@@ -271,6 +299,7 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
+        created_by: ctx.state.user.id,
       },
     });
 
@@ -284,7 +313,7 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
     await file.update({
       filename,
       is_public,
-      updated_by,
+      updated_by: ctx.state.user.id,
       updated_at: new Date(),
       public_expiration,
       public_by,
@@ -356,10 +385,8 @@ router.delete("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
 
 // 文件批量删除接口
 router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
-  const { ids } = ctx.request.body; // 获取要删除的文件 ID 列表
-  const updated_by = ctx.query.updated_by || "anonymous"; // 获取更新者，默认为匿名
-  console.log(ctx.request.body);
-  console.log(JSON.stringify(ctx.request.body));
+  const { ids } = ctx.request.body;
+  const updated_by = ctx.state.user.id;
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
     ctx.status = 400;
@@ -380,6 +407,7 @@ router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
           id: {
             [Op.in]: ids,
           },
+          created_by: ctx.state.user.id,
           is_delete: false,
         },
       }
@@ -410,10 +438,10 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
-        is_public: true,
         [Op.or]: [
-          { public_expiration: null },
-          { public_expiration: { [Op.gt]: new Date() } },
+          { public_expiration: null, is_public: true },
+          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+          { created_by: ctx.state.user.id },
         ],
       },
       attributes: [
@@ -464,89 +492,32 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
 });
 
 // 单文件下载
-router.get("/files/:id/download", validateParams(FILES_REST_ID), async (ctx) => {
-  const { id } = ctx.params;
+router.get(
+  "/files/:id/download",
+  validateParams(FILES_REST_ID),
+  async (ctx) => {
+    const { id } = ctx.params;
 
-  try {
-    const file = await Files.findOne({
-      where: {
-        id: id,
-        is_delete: false,
-        [Op.or]: [
-          { public_expiration: null },
-          { public_expiration: { [Op.gt]: new Date() } },
-        ],
-      },
-      attributes: ["filename", "real_file_location", "ext"],
-    });
-
-    if (!file) {
-      ctx.status = 404;
-      ctx.body = { message: "No valid files found for the provided id" };
-      return;
-    }
-    // 单文件下载
-    const filePath = file.real_file_location;
-    const fileName = file.filename;
-
-    // 检查文件是否存在
     try {
-      await fsp.access(filePath);
-    } catch (err) {
-      ctx.status = 404;
-      ctx.body = { message: "File not found" };
-      return;
-    }
-    const { mime } = await detectFileType(filePath);
+      const file = await Files.findOne({
+        where: {
+          id: id,
+          is_delete: false,
+          [Op.or]: [
+            { public_expiration: null, is_public: true },
+            { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+            { created_by: ctx.state.user.id },
+          ],
+        },
+        attributes: ["filename", "real_file_location", "ext"],
+      });
 
-    // 设置响应头
-    ctx.set("Content-Type", mime);
-    ctx.set("Content-Disposition", `attachment; filename="${fileName}"`);
-
-    // 返回文件流
-    ctx.body = fs.createReadStream(filePath);
-  } catch (error) {
-    ctx.status = 500;
-    ctx.body = {
-      message: "Error processing your download request",
-      error: error.message,
-    };
-    console.error("Download error:", error);
-  }
-});
-
-// 批量下载
-router.post("/files/download", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
-  const ids = ctx.request.body.ids;
-
-  if (ids.length === 0) {
-    ctx.status = 400;
-    ctx.body = { message: "No file ids provided for download" };
-    return;
-  }
-
-  try {
-    const files = await Files.findAll({
-      where: {
-        id: { [Op.in]: ids },
-        is_delete: false,
-        [Op.or]: [
-          { public_expiration: null },
-          { public_expiration: { [Op.gt]: new Date() } },
-        ],
-      },
-      attributes: ["filename", "real_file_location", "ext"],
-    });
-
-    if (files.length === 0) {
-      ctx.status = 404;
-      ctx.body = { message: "No valid files found for the provided ids" };
-      return;
-    }
-
-    if (files.length === 1) {
+      if (!file) {
+        ctx.status = 404;
+        ctx.body = { message: "No valid files found for the provided id" };
+        return;
+      }
       // 单文件下载
-      const file = files[0];
       const filePath = file.real_file_location;
       const fileName = file.filename;
 
@@ -566,41 +537,108 @@ router.post("/files/download", validateBody(FILES_BODY_BATCH_IDS), async (ctx) =
 
       // 返回文件流
       ctx.body = fs.createReadStream(filePath);
-    } else {
-      // 多文件下载，打包成 ZIP
-      const zip = new JSZip();
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        message: "Error processing your download request",
+        error: error.message,
+      };
+      console.error("Download error:", error);
+    }
+  }
+);
 
-      for (const file of files) {
+// 批量下载
+router.post(
+  "/files/download",
+  validateBody(FILES_BODY_BATCH_IDS),
+  async (ctx) => {
+    const ids = ctx.request.body.ids;
+
+    if (ids.length === 0) {
+      ctx.status = 400;
+      ctx.body = { message: "No file ids provided for download" };
+      return;
+    }
+
+    try {
+      const files = await Files.findAll({
+        where: {
+          id: { [Op.in]: ids },
+          is_delete: false,
+          [Op.or]: [
+            { public_expiration: null, is_public: true },
+            { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+            { created_by: ctx.state.user.id },
+          ],
+        },
+        attributes: ["filename", "real_file_location", "ext"],
+      });
+
+      if (files.length === 0) {
+        ctx.status = 404;
+        ctx.body = { message: "No valid files found for the provided ids" };
+        return;
+      }
+
+      if (files.length === 1) {
+        // 单文件下载
+        const file = files[0];
         const filePath = file.real_file_location;
         const fileName = file.filename;
 
-        // 确保文件存在
+        // 检查文件是否存在
         try {
           await fsp.access(filePath);
-          const fileData = await fsp.readFile(filePath);
-          zip.file(fileName, fileData);
         } catch (err) {
-          console.error(`File not found: ${filePath}`, err);
+          ctx.status = 404;
+          ctx.body = { message: "File not found" };
+          return;
         }
+        const { mime } = await detectFileType(filePath);
+
+        // 设置响应头
+        ctx.set("Content-Type", mime);
+        ctx.set("Content-Disposition", `attachment; filename="${fileName}"`);
+
+        // 返回文件流
+        ctx.body = fs.createReadStream(filePath);
+      } else {
+        // 多文件下载，打包成 ZIP
+        const zip = new JSZip();
+
+        for (const file of files) {
+          const filePath = file.real_file_location;
+          const fileName = file.filename;
+
+          // 确保文件存在
+          try {
+            await fsp.access(filePath);
+            const fileData = await fsp.readFile(filePath);
+            zip.file(fileName, fileData);
+          } catch (err) {
+            console.error(`File not found: ${filePath}`, err);
+          }
+        }
+
+        const zipContent = await zip.generateAsync({ type: "nodebuffer" });
+
+        // 设置响应头
+        ctx.set("Content-Type", "application/zip");
+        ctx.set("Content-Disposition", 'attachment; filename="files.zip"');
+
+        // 返回 ZIP 内容
+        ctx.body = zipContent;
       }
-
-      const zipContent = await zip.generateAsync({ type: "nodebuffer" });
-
-      // 设置响应头
-      ctx.set("Content-Type", "application/zip");
-      ctx.set("Content-Disposition", 'attachment; filename="files.zip"');
-
-      // 返回 ZIP 内容
-      ctx.body = zipContent;
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        message: "Error processing your download request",
+        error: error.message,
+      };
+      console.error("Download error:", error);
     }
-  } catch (error) {
-    ctx.status = 500;
-    ctx.body = {
-      message: "Error processing your download request",
-      error: error.message,
-    };
-    console.error("Download error:", error);
   }
-});
+);
 
 module.exports = router;
