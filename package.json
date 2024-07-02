@@ -10,15 +10,19 @@
     "prod": "pm2 start index.js --name upload-file-service --watch",
     "del": "pm2 delete upload-file-service",
     "log": "pm2 logs upload-file-service",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "prepare": "husky install"
   },
   "dependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
     "@koa/cors": "^5.0.0",
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "file-type": "^19.0.0",
     "filesize": "^10.1.2",
+    "husky": "^9.0.11",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
