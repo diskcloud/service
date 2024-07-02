@@ -109,8 +109,8 @@ router.get("/users/info", async (ctx) => {
 router.post("/logout", async (ctx) => {
   const { id } = ctx.state.user;
   if (!ctx.state.token) {
-    ctx.status = 400;
-    ctx.body = { message: "Token is required" };
+    ctx.status = 200;
+    ctx.body = { message: "Invalid Token" };
     return;
   }
 

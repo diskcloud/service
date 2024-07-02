@@ -6,9 +6,11 @@ const sharp = require("sharp");
 const tinify = require("tinify");
 const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
+const JSZip = require("jszip");
+const { filesize } = require("filesize");
+
 const { detectFileType } = require("../utils/detectFileType");
 const Files = require("../models/files");
-const JSZip = require("jszip");
 const {
   imageMimeTypes,
   tinifySupportedMimeTypes,
@@ -224,7 +226,10 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
     });
 
     ctx.body = {
-      items: rows,
+      items: rows.map((file) => ({
+        ...file.dataValues,
+        file_size: filesize(file.file_size),
+      })),
       total: count,
     };
   } catch (error) {
@@ -432,7 +437,6 @@ router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
 router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
-
   try {
     const file = await Files.findOne({
       where: {
@@ -441,7 +445,7 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
         [Op.or]: [
           { public_expiration: null, is_public: true },
           { public_expiration: { [Op.gt]: new Date() }, is_public: true },
-          { created_by: ctx.state.user.id },
+          { created_by: ctx.state?.user?.id || null },
         ],
       },
       attributes: [
