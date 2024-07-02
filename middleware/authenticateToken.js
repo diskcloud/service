@@ -23,13 +23,15 @@ const isWhitelisted = (url, method) => {
 };
 
 const authenticateToken = async (ctx, next) => {
-  if (isWhitelisted(ctx.path, ctx.method)) {
+  // token 不存在并且在白名单类，免除校验
+  const token = ctx.headers["authorization"]?.replace("Bearer ", "");
+
+  if (isWhitelisted(ctx.path, ctx.method) && !token) {
     await next();
     return;
   }
 
   try {
-    const token = ctx.headers["authorization"]?.replace("Bearer ", "");
     if (!token) {
       ctx.status = 403;
       ctx.body = { message: "Not Logged In" };
