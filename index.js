@@ -9,7 +9,7 @@ const usersRouter = require("./routers/users");
 const redisClient = require("./redis");
 const authenticateToken = require("./middleware/authenticateToken");
 const cors = require("@koa/cors");
-
+require("./models");
 require("dotenv").config({ path: ".env.local" });
 
 const app = new Koa();

@@ -11,6 +11,7 @@ const { filesize } = require("filesize");
 
 const { detectFileType } = require("../utils/detectFileType");
 const Files = require("../models/files");
+const Users = require("../models/users");
 const {
   imageMimeTypes,
   tinifySupportedMimeTypes,
@@ -209,14 +210,16 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
       },
       limit,
       offset,
+      include: [
+        { model: Users, as: "creator", attributes: ["id", "username"] },
+        { model: Users, as: "updater", attributes: ["id", "username"] },
+        { model: Users, as: "publisher", attributes: ["id", "username"] },
+      ],
       attributes: [
         "id",
-        "created_by",
         "created_at",
-        "public_by",
         "public_expiration",
         "updated_at",
-        "updated_by",
         "file_size",
         "filename",
         "file_location",
