@@ -2,7 +2,6 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../utils/dbInstance");
 const { USER_STATUS } = require("../constants/users");
 
-// 定义 User 模型
 const Users = sequelize.define(
   "User",
   {
@@ -80,4 +79,5 @@ const Users = sequelize.define(
     collate: "utf8mb4_unicode_ci",
   }
 );
+
 module.exports = Users;

@@ -25,7 +25,7 @@ const isWhitelisted = (url, method) => {
 const authenticateToken = async (ctx, next) => {
   // token 不存在并且在白名单类，免除校验
   const token = ctx.headers["authorization"]?.replace("Bearer ", "");
-  if (isWhitelisted(ctx.path, ctx.method) && !token) {
+  if (isWhitelisted(ctx.path, ctx.method)) {
     await next();
     return;
   }
