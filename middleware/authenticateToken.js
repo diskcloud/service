@@ -58,8 +58,8 @@ const authenticateToken = async (ctx, next) => {
     await next();
   } catch (error) {
     console.error(error);
-    ctx.status = 500;
-    ctx.body = { message: "Internal server error" };
+    ctx.status = 401;
+    ctx.body = { message: "Invalid token" };
   }
 };
 

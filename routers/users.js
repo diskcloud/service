@@ -2,10 +2,12 @@ const Router = require("koa-router");
 const redisClient = require("../redis");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const checkAdminAuth = require("../middleware/checkAdminAuth");
 require("dotenv").config({ path: ".env.local" });
 const Users = require("../models/users");
-const { USERS_LOGIN_POST } = require("../types/schema/users");
-const { validateBody } = require("../types");
+const { USERS_LOGIN_POST, USER_REST_ID } = require("../types/schema/users");
+const { validateBody, validateParams } = require("../types");
+const { USER_STATUS } = require("../constants/users");
 
 const router = new Router();
 
@@ -13,17 +15,19 @@ router.post("/login", validateBody(USERS_LOGIN_POST), async (ctx) => {
   const { username, password } = ctx.request.body;
 
   try {
-    const user = await Users.findOne({ where: { username } });
+    const user = await Users.findOne({
+      where: { username, status: USER_STATUS.ACTIVE },
+    });
     if (!user) {
-      ctx.status = 401;
-      ctx.body = { message: "Invalid credentials" };
+      ctx.status = 403;
+      ctx.body = { message: "Incorrect account or password" };
       return;
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      ctx.status = 401;
-      ctx.body = { message: "Invalid credentials" };
+      ctx.status = 403;
+      ctx.body = { message: "Incorrect account or password" };
       return;
     }
 
@@ -37,7 +41,6 @@ router.post("/login", validateBody(USERS_LOGIN_POST), async (ctx) => {
       if (err) {
         console.log(err);
       }
-      console.log(user);
     });
 
     // 将 token 存储在 Redis 中
@@ -53,8 +56,8 @@ router.post("/login", validateBody(USERS_LOGIN_POST), async (ctx) => {
     ctx.body = { token };
   } catch (error) {
     console.error(error);
-    ctx.status = 500;
-    ctx.body = { message: "Internal server error" };
+    ctx.status = 403;
+    ctx.body = { message: "Incorrect account or password" };
   }
 });
 
@@ -132,5 +135,33 @@ router.post("/logout", async (ctx) => {
     ctx.body = { message: "Internal server error" };
   }
 });
+
+// 禁用用户
+router.patch(
+  "/users/:id/disabled",
+  validateParams(USER_REST_ID),
+  checkAdminAuth,
+  async (ctx) => {
+    const { id } = ctx.params;
+    const user = await Users.findOne({ where: { id } });
+
+    if (!user.id) {
+      ctx.status = 404;
+      ctx.body = { message: "User not found" };
+      return;
+    }
+
+    // 强制下线 Token
+    await redisClient.del(`user_login:${id}`);
+
+    // 禁用此账号
+    user.update({
+      status: "BANNED",
+      logout_at: new Date(),
+    });
+
+    ctx.status = 204;
+  }
+);
 
 module.exports = router;
