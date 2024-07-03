@@ -1,11 +1,6 @@
-const { DataTypes, Sequelize } = require("sequelize");
-const sequelize = require("../utils/dbInstance"); // 修改为实际的sequelize实例路径
-const UserStatus = {
-  ACTIVE: "ACTIVE", // 用户账号已激活
-  INACTIVE: "INACTIVE", // 用户账号未激活
-  BANNED: "BANNED", // 用户账号被封禁
-  PENDING: "PENDING", // 用户账号待审核
-};
+const { DataTypes } = require("sequelize");
+const sequelize = require("../utils/dbInstance");
+const { USER_STATUS } = require("../constants/users");
 
 // 定义 User 模型
 const Users = sequelize.define(
@@ -38,9 +33,9 @@ const Users = sequelize.define(
     },
     status: {
       type: DataTypes.ENUM,
-      values: Object.values(UserStatus),
+      values: Object.values(USER_STATUS),
       allowNull: false,
-      defaultValue: UserStatus.ACTIVE,
+      defaultValue: USER_STATUS.ACTIVE,
       collate: "utf8mb4_unicode_ci",
     },
     created_at: {
@@ -71,6 +66,11 @@ const Users = sequelize.define(
       type: DataTypes.DOUBLE,
       allowNull: true,
       defaultValue: 0,
+    },
+    is_admin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
     },
   },
   {

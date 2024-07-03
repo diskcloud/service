@@ -32,7 +32,7 @@ const authenticateToken = async (ctx, next) => {
 
   try {
     if (!token) {
-      ctx.status = 403;
+      ctx.status = 401;
       ctx.body = { message: "Not Logged In" };
       return;
     }
@@ -40,7 +40,7 @@ const authenticateToken = async (ctx, next) => {
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
     if (!decoded.id) {
-      ctx.status = 403;
+      ctx.status = 401;
       ctx.body = { message: "No token provided" };
       return;
     }
@@ -48,7 +48,7 @@ const authenticateToken = async (ctx, next) => {
     // Redis 查看是否存在
     const redisToken = await redisClient.get(`user_login:${decoded.id}`);
     if (!redisToken) {
-      ctx.status = 403;
+      ctx.status = 401;
       ctx.body = { message: "Invalid token" };
       return;
     }
@@ -58,8 +58,8 @@ const authenticateToken = async (ctx, next) => {
     await next();
   } catch (error) {
     console.error(error);
-    ctx.status = 500;
-    ctx.body = { message: "Internal server error" };
+    ctx.status = 401;
+    ctx.body = { message: "Invalid token" };
   }
 };
 

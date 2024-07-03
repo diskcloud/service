@@ -14,7 +14,7 @@ const Files = require("../models/files");
 const {
   imageMimeTypes,
   tinifySupportedMimeTypes,
-} = require("../constants/file");
+} = require("../constants/files");
 const {
   FILES_UPLOAD_POST_QUERY,
   FILES_LIST_GET_QUERY,
