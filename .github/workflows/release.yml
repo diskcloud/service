@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - plus/2.0.0
+    tags:
+      - 'v*.*.*'  # 监听所有标签的推送，格式为 vX.X.X
 
 jobs:
   release:
@@ -33,7 +33,7 @@ jobs:
           git config --global user.name "CrazyMrYan"
           git add CHANGELOG.md
           git commit -m "chore(release): update changelog"
-          git push origin plus/2.0.0
+          git push origin HEAD:main  # 确保将更改推送到主分支
 
       - name: Run semantic-release
         env:
