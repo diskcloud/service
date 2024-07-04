@@ -1,6 +1,6 @@
 ## 2.0.0 (2024-07-04)
 
-* chore(release): update changelog ([19d8dd2](https://github.com/diskcloud/service/commit/19d8dd2))
+* chore: #34 Automatically generate updated CHANGELOG.md file ([833346b](https://github.com/diskcloud/service/commit/833346b)), closes [#34](https://github.com/diskcloud/service/issues/34)
 
 
 
