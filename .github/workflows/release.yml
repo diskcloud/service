@@ -7,13 +7,12 @@ on:
 
 jobs:
   release:
-    permissions:
-      contents: read
-      pages: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -32,7 +31,6 @@ jobs:
         run: |
           git config --global user.email "crazymryan@gmail.com"
           git config --global user.name "CrazyMrYan"
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/diskcloud/service.git
           git add CHANGELOG.md
           git commit -m "chore(release): update changelog"
           git push origin plus/2.0.0
