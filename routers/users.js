@@ -128,10 +128,10 @@ router.post("/logout", async (ctx) => {
     // 从 Redis 中删除 token
     await redisClient.del(`user_login:${id}`);
 
-    ctx.status = 200;
+    ctx.status = 204;
     ctx.body = { message: "Logout successful" };
   } catch (error) {
-    ctx.status = 500;
+    ctx.status = 200;
     ctx.body = { message: "Internal server error" };
   }
 });
