@@ -24,9 +24,11 @@ jobs:
         run: npm run changelog
 
       - name: Commit changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config --global user.email "crazymryan@gmail.com"
           git config --global user.name "CrazyMrYan"
           git add CHANGELOG.md
           git commit -m "chore(release): update changelog"
-          git push origin plus/2.0.0
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/diskcloud/service.git plus/2.0.0
