@@ -1,6 +1,6 @@
 ## 2.0.0 (2024-07-04)
 
-* chore(release): update changelog ([d1dc584](https://github.com/diskcloud/service/commit/d1dc584))
+* chore(release): update changelog ([05bd004](https://github.com/diskcloud/service/commit/05bd004))
 
 
 
