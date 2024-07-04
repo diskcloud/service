@@ -321,23 +321,6 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       public_expiration,
     });
 
-    // const updatedFile = {
-    //   id: file.id,
-    //   filename: file.filename,
-    //   is_public: file.is_public,
-    //   public_expiration: file.public_expiration,
-    //   is_thumb: file.is_thumb,
-    //   file_size: file.file_size,
-    //   file_location: file.file_location,
-    //   thumb_location: file.thumb_location,
-    //   mime: file.mime,
-    //   ext: file.ext,
-    //   created_at: file.created_at,
-    //   created_by: file.created_by,
-    //   updated_at: file.updated_at,
-    //   updated_by: file.updated_by,
-    // };
-
     // 返回更新后的文件信息
     ctx.body = file;
   } catch (error) {
