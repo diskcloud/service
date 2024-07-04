@@ -294,12 +294,7 @@ router.get("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
 // 编辑文件信息接口
 router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
-  const {
-    filename,
-    is_public,
-    public_expiration,
-    public_by,
-  } = ctx.request.body;
+  const { filename, is_public, public_expiration } = ctx.request.body;
 
   try {
     // 查找文件
@@ -324,28 +319,27 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       updated_by: ctx.state.user.id,
       updated_at: new Date(),
       public_expiration,
-      public_by,
     });
 
-    const updatedFile = {
-      id: file.id,
-      filename: file.filename,
-      is_public: file.is_public,
-      public_expiration: file.public_expiration,
-      is_thumb: file.is_thumb,
-      file_size: file.file_size,
-      file_location: file.file_location,
-      thumb_location: file.thumb_location,
-      mime: file.mime,
-      ext: file.ext,
-      created_at: file.created_at,
-      created_by: file.created_by,
-      updated_at: file.updated_at,
-      updated_by: file.updated_by,
-    };
+    // const updatedFile = {
+    //   id: file.id,
+    //   filename: file.filename,
+    //   is_public: file.is_public,
+    //   public_expiration: file.public_expiration,
+    //   is_thumb: file.is_thumb,
+    //   file_size: file.file_size,
+    //   file_location: file.file_location,
+    //   thumb_location: file.thumb_location,
+    //   mime: file.mime,
+    //   ext: file.ext,
+    //   created_at: file.created_at,
+    //   created_by: file.created_by,
+    //   updated_at: file.updated_at,
+    //   updated_by: file.updated_by,
+    // };
 
     // 返回更新后的文件信息
-    ctx.body = updatedFile;
+    ctx.body = file;
   } catch (error) {
     ctx.status = 500;
     ctx.body = {
@@ -366,6 +360,7 @@ router.delete("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       where: {
         id,
         is_delete: false,
+        created_by: ctx.state.user.id,
       },
     });
 
