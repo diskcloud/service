@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - plus/2.0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate changelog
+        run: npm run changelog
+
+      - name: Commit changelog
+        run: |
+          git config --global user.email "crazymryan@gmail.com"
+          git config --global user.name "CrazyMrYan"
+          git add CHANGELOG.md
+          git commit -m "chore(release): update changelog"
+          git push origin plus/2.0.0
