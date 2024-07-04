@@ -29,6 +29,12 @@ jobs:
         run: |
           git config --global user.email "crazymryan@gmail.com"
           git config --global user.name "CrazyMrYan"
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/diskcloud/service.git
           git add CHANGELOG.md
           git commit -m "chore(release): update changelog"
-          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/diskcloud/service.git plus/2.0.0
+          git push origin plus/2.0.0
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npx semantic-release
