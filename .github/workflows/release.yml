@@ -28,5 +28,5 @@ jobs:
           git config --global user.email "crazymryan@gmail.com"
           git config --global user.name "CrazyMrYan"
           git add CHANGELOG.md
-          git commit -m "chore: update changelog"
+          git commit -m "chore(release): update changelog"
           git push origin plus/2.0.0
