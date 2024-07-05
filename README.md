@@ -46,9 +46,22 @@
 
 ## Contributors 💪
 
-<a href="https://github.com/diskcloud/service/graphs/contributors"><img src="https://opencollective.com/diskcloud/contributors.svg?width=890" /></a>
+<a href="https://github.com/diskcloud/service/graphs/contributors"><img src="https://opencollective.com/diskcloud/contributors.svg" /></a>
 
-
+<p>
+  <a href="https://next.ossinsight.io/widgets/official/compose-activity-trends?repo_id=820362952" target="_blank" style="display: block" align="center">
+    <picture>
+      <source width="49.5% media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-activity-trends/thumbnail.png?repo_id=820362952&image_size=auto&color_scheme=dark" height="200px">
+      <img alt="Activity Trends of diskcloud/service - Last 28 days" src="https://next.ossinsight.io/widgets/official/compose-activity-trends/thumbnail.png?repo_id=820362952&image_size=auto&color_scheme=light" height="auto">
+    </picture>
+  </a>
+  <a href="https://next.ossinsight.io/widgets/official/analyze-org-activity-efficiency?owner_id=11855343&period=past_28_days&activity=pull-requests" target="_blank" style="display: block" align="center">
+    <picture>
+      <source width="49.5%" media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/analyze-org-activity-efficiency/thumbnail.png?owner_id=11855343&period=past_28_days&activity=pull-requests&image_size=3x9&color_scheme=dark" height="200px">
+      <img alt="Count of Pull requests Over Time" src="https://next.ossinsight.io/widgets/official/analyze-org-activity-efficiency/thumbnail.png?owner_id=11855343&period=past_28_days&activity=pull-requests&image_size=3x9&color_scheme=light" height="auto">
+    </picture>
+  </a>
+</p>
 
 ## Other Docs📖
 
