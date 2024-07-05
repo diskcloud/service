@@ -11,25 +11,46 @@
 </p>
 
 
-## Support System
-<p>
-<img alt="Liunx" width="40" src="./public/support-system/linux.svg" style="margin-right: 20px">
-<img alt="MacOs" style="margin-right: 20px"  width="40" src="./public/support-system/macos.svg">
-<img alt="Windows"  width="40" src="./public/support-system/windows.svg">
-</p>
+## Support System💻
+
+| Liunx                                                        | MacOS                                                        | Windows                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| <img alt="Liunx" width="35" src="./public/support-system/linux.svg"> | <img alt="MacOs" width="35" src="./public/support-system/macos.svg"> | <img alt="Windows" width="35" src="./public/support-system/windows.svg"> |
 
 
-## 使用方法
+
+## Runtime Environment📍
+
+| Node     | Npm     | Yarn     | MySQL    | Redis   |
+| -------- | ------- | -------- | -------- | ------- |
+| >=18.0.0 | >=8.0.0 | >=1.22.0 | >=5.7.44 | >=7.2.4 |
+
+
+
+## Usage😋
+
+#### Liunx
 
 ```shell
-yarn install
-
-yarn dev
+./scripts/setup.sh
 ```
 
-> 启动完成之后，会自动创建 resource 作为资源文件夹，而 provisional 会作为临时文件夹。后续会考虑开启定时任务进行清理。
+#### Windows
+
+```shell
+./scripts/setup.ps1
+```
+
+
 
 
 ## Contributors 💪
 
 <a href="https://github.com/diskcloud/service/graphs/contributors"><img src="https://opencollective.com/diskcloud/contributors.svg?width=890" /></a>
+
+
+
+## Other Docs📖
+
+[贡献指南](./CONTRIBUTING.md) | [安全策略](./SECURITY.md) | [更新日志](./CHANGELOG.md) | [MIT license](./LICENSE)
+
