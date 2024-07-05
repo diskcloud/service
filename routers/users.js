@@ -7,11 +7,11 @@ require("dotenv").config({ path: ".env.local" });
 const Users = require("../models/users");
 const { USERS_LOGIN_POST, USER_REST_ID } = require("../types/schema/users");
 const { validateBody, validateParams } = require("../types");
-const { USER_STATUS } = require("../constants/users");
+const { USER_STATUS, USER_ACTION_TYPES } = require("../constants/users");
 
 const router = new Router();
 
-router.post("/login", validateBody(USERS_LOGIN_POST), async (ctx) => {
+router.post("/sessions", validateBody(USERS_LOGIN_POST), async (ctx) => {
   const { username, password } = ctx.request.body;
 
   try {
@@ -61,7 +61,7 @@ router.post("/login", validateBody(USERS_LOGIN_POST), async (ctx) => {
   }
 });
 
-router.post("/register", validateBody(USERS_LOGIN_POST), async (ctx) => {
+router.post("/users", validateBody(USERS_LOGIN_POST), async (ctx) => {
   const { username, password } = ctx.request.body;
 
   try {
@@ -109,7 +109,7 @@ router.get("/users/info", async (ctx) => {
   }
 });
 
-router.post("/logout", async (ctx) => {
+router.delete("/sessions", async (ctx) => {
   const { id } = ctx.state.user;
   if (!ctx.state.token) {
     ctx.status = 200;
@@ -138,11 +138,12 @@ router.post("/logout", async (ctx) => {
 
 // 禁用用户
 router.patch(
-  "/users/:id/disabled",
+  "/users/:id/:action",
   validateParams(USER_REST_ID),
   checkAdminAuth,
   async (ctx) => {
-    const { id } = ctx.params;
+    const { id, action } = ctx.params;
+
     const user = await Users.findOne({ where: { id } });
 
     if (!user.id) {
@@ -151,16 +152,27 @@ router.patch(
       return;
     }
 
-    // 强制下线 Token
-    await redisClient.del(`user_login:${id}`);
+    const updateStatus = USER_ACTION_TYPES[action].value;
+
+    if (action === USER_ACTION_TYPES.disabled.label) {
+      // 强制下线 Token
+      await redisClient.del(`user_login:${id}`);
+      user.update({
+        status: updateStatus,
+        logout_at: new Date(),
+      });
+      ctx.status = 204;
+      return;
+    }
 
     // 禁用此账号
     user.update({
-      status: "BANNED",
-      logout_at: new Date(),
+      status: updateStatus,
     });
 
-    ctx.status = 204;
+    ctx.body = user;
+
+    ctx.status = 200;
   }
 );
 

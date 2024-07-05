@@ -6,16 +6,16 @@ const { match } = require("path-to-regexp");
 
 // 白名单配置 URL: Method
 const whiteList = {
-  "/login": "POST", // 登录
-  "/register": "POST", // 注册
-  "/files/:id/preview": "GET", // 文件预览
+  "/sessions": ["POST", "DELETE"], // 登录和登出
+  "/users": ["POST"], // 注册
+  "/files/:id/preview": ["GET"], // 文件预览
 };
 
 // 路径匹配函数
 const isWhitelisted = (url, method) => {
   for (const path in whiteList) {
     const matcher = match(path, { decode: decodeURIComponent });
-    if (matcher(url) && whiteList[path] === method) {
+    if (matcher(url) && whiteList[path].includes(method)) {
       return true;
     }
   }

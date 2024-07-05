@@ -5,6 +5,18 @@ const USER_STATUS = {
   PENDING: "PENDING", // 用户账号待审核
 };
 
+const USER_ACTION_TYPES = {
+  disabled: {
+    label: "disabled",
+    value: USER_STATUS.BANNED,
+  },
+  activated: {
+    label: "activated",
+    value: USER_STATUS.ACTIVE,
+  },
+};
+
 module.exports = {
   USER_STATUS,
+  USER_ACTION_TYPES,
 };
