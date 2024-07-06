@@ -128,7 +128,7 @@ router.post(
           is_public: isFilePublic,
           thumb_location: thumbUrl,
           is_thumb: shouldGenerateThumb,
-          is_delete: false,
+          is_deleted: false,
           real_file_thumb_location: realThumbPath,
           mime,
           ext: fileExt,
@@ -200,7 +200,7 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
 
     const { rows, count } = await Files.findAndCountAll({
       where: {
-        is_delete: false,
+        is_deleted: false,
         [Op.or]: [
           { public_expiration: null, is_public: true },
           { public_expiration: { [Op.gt]: new Date() }, is_public: true },
@@ -250,7 +250,7 @@ router.get("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
     const file = await Files.findOne({
       where: {
         id,
-        is_delete: false,
+        is_deleted: false,
         [Op.or]: [
           { public_expiration: null, is_public: true },
           { public_expiration: { [Op.gt]: new Date() }, is_public: true },
@@ -301,7 +301,7 @@ router.put("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
     const file = await Files.findOne({
       where: {
         id,
-        is_delete: false,
+        is_deleted: false,
         created_by: ctx.state.user.id,
       },
     });
@@ -338,12 +338,14 @@ router.delete("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
 
   try {
+    const deleted_by = ctx.state.user.id;
     // 查找文件
     const file = await Files.findOne({
       where: {
         id,
-        is_delete: false,
-        created_by: ctx.state.user.id,
+        is_deleted: false,
+        deleted_at: new Date(),
+        deleted_by,
       },
     });
 
@@ -353,11 +355,11 @@ router.delete("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
       return;
     }
 
-    // 执行软删除，将 is_delete 字段设置为 true
+    // 执行软删除，将 is_deleted 字段设置为 true
     await file.update({
-      is_delete: true,
-      updated_at: new Date(), // 更新更新时间
-      updated_by: ctx.query.updated_by || "anonymous", // 可以通过查询参数传递更新者
+      is_deleted: true,
+      deleted_at: new Date(), // 更新更新时间
+      deleted_by, // 可以通过查询参数传递更新者
     });
 
     // 返回删除成功的信息
@@ -372,7 +374,7 @@ router.delete("/files/:id", validateParams(FILES_REST_ID), async (ctx) => {
 // 文件批量删除接口
 router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
   const { ids } = ctx.request.body;
-  const updated_by = ctx.state.user.id;
+  const deleted_by = ctx.state.user.id;
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
     ctx.status = 400;
@@ -384,17 +386,21 @@ router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
     // 查找并更新指定的文件
     const [numberOfAffectedRows] = await Files.update(
       {
-        is_delete: true,
-        updated_by: updated_by,
-        updated_at: new Date(),
+        is_deleted: true,
+        deleted_by,
+        deleted_at: new Date(),
       },
       {
         where: {
           id: {
             [Op.in]: ids,
           },
-          created_by: ctx.state.user.id,
-          is_delete: false,
+          is_deleted: false,
+          [Op.or]: [
+            {
+              created_by: deleted_by,
+            },
+          ],
         },
       }
     );
@@ -422,7 +428,7 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
     const file = await Files.findOne({
       where: {
         id,
-        is_delete: false,
+        is_deleted: false,
         [Op.or]: [
           { public_expiration: null, is_public: true },
           { public_expiration: { [Op.gt]: new Date() }, is_public: true },
@@ -487,7 +493,7 @@ router.get(
       const file = await Files.findOne({
         where: {
           id: id,
-          is_delete: false,
+          is_deleted: false,
           [Op.or]: [
             { public_expiration: null, is_public: true },
             { public_expiration: { [Op.gt]: new Date() }, is_public: true },
@@ -550,7 +556,7 @@ router.post(
       const files = await Files.findAll({
         where: {
           id: { [Op.in]: ids },
-          is_delete: false,
+          is_deleted: false,
           [Op.or]: [
             { public_expiration: null, is_public: true },
             { public_expiration: { [Op.gt]: new Date() }, is_public: true },

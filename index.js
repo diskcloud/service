@@ -10,6 +10,7 @@ const redisClient = require("./redis");
 const authenticateToken = require("./middleware/authenticateToken");
 const cors = require("@koa/cors");
 require("./models");
+require("./schedules/fileRecover");
 require("dotenv").config({ path: ".env.local" });
 
 const app = new Koa();
@@ -59,5 +60,4 @@ app.listen(process.env.SERVER_PORT, async () => {
   await redisClient.connect();
   await sequelize.sync();
   console.log(`Server is running on ${process.env.INTERNAL_NETWORK_DOMAIN}`);
-  console.log(`Server is running on ${process.env.PUBLIC_NETWORK_DOMAIN}`);
 });
