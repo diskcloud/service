@@ -10,39 +10,39 @@
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/diskcloud/service">
 </p>
 
-## Support System 💻
+## 支持系统 💻
 
-| Liunx                                                                | MacOS                                                                | Windows                                                                  |
+| Linux                                                                | MacOS                                                                | Windows                                                                  |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| <img alt="Liunx" width="35" src="./public/support-system/linux.svg"> | <img alt="MacOs" width="35" src="./public/support-system/macos.svg"> | <img alt="Windows" width="35" src="./public/support-system/windows.svg"> |
+| <img alt="Linux" width="35" src="./public/support-system/linux.svg"> | <img alt="MacOS" width="35" src="./public/support-system/macos.svg"> | <img alt="Windows" width="35" src="./public/support-system/windows.svg"> |
 
-## Runtime Environment 📍
+## 运行环境 📍
 
 | Node     | Npm     | Yarn     | MySQL    | Redis   |
 | -------- | ------- | -------- | -------- | ------- |
 | >=18.0.0 | >=8.0.0 | >=1.22.0 | >=5.7.44 | >=7.2.4 |
 
-## Feature List 📃
+## 功能列表 📃
 
-- [x] File upload
-- [x] File compression
-- [x] File thumbnail
-- [x] Temporary storage of files
-- [x] File Recycle Bin
-- [x] File Download
-- [x] File editing
-- [x] File sharing
-- [x] File data management
-- [x] User SSO
-- [x] User logout
-- [x] User Role Permissions
-- [x] User disable enable
-- [x] One click start of project
-- [x] Automatic database creation
+- [x] 文件上传
+- [x] 文件压缩
+- [x] 文件缩略图
+- [x] 文件临时存储
+- [x] 文件回收站
+- [x] 文件下载
+- [x] 文件编辑
+- [x] 文件共享
+- [x] 文件数据管理
+- [x] 用户单点登录（SSO）
+- [x] 用户注销
+- [x] 用户角色权限
+- [x] 用户禁用启用
+- [x] 一键启动项目
+- [x] 自动创建数据库
 
-## Usage 😋
+## 使用方法 😋
 
-#### Liunx
+#### Linux
 
 ```shell
 ./scripts/setup.sh
@@ -54,7 +54,7 @@
 ./scripts/setup.ps1
 ```
 
-## Contributors 💪
+## 贡献者 💪
 
 <a href="https://github.com/diskcloud/service/graphs/contributors"><img src="https://opencollective.com/diskcloud/contributors.svg" /></a>
 
@@ -72,6 +72,6 @@
   </picture>
 </a>
 
-## Other Docs 📖
+## 其他文档 📖
 
-[贡献指南](./CONTRIBUTING.md) | [安全策略](./SECURITY.md) | [更新日志](./CHANGELOG.md) | [许可证](./LICENSE)
+[Contribution Guide](./CONTRIBUTING.md) | [Security Policy](./SECURITY.md) | [Update Log](./CHANGELOG.md) | [Licence](./LICENSE)
