@@ -66,10 +66,19 @@ const Files = sequelize.define(
       allowNull: true,
       defaultValue: null,
     },
-    is_delete: {
+    is_deleted: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    deleted_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
     },
     real_file_location: {
       type: DataTypes.STRING(255),
@@ -96,6 +105,7 @@ const Files = sequelize.define(
     tableName: "files",
     timestamps: false,
     underscored: true,
+    paranoid: true,
     charset: "utf8mb4",
     collate: "utf8mb4_general_ci",
   }
