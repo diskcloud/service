@@ -5,6 +5,11 @@
 </p>
 
 <p align="center">
+  <a href="./README.md">English</a> ｜ 
+  <a href="./README-zh.md">中文</a>
+</p>
+
+<p align="center">
 <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/diskcloud/service">
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues-pr/diskcloud/service">
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/diskcloud/service">
