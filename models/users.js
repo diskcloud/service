@@ -64,7 +64,12 @@ const Users = sequelize.define(
     disk_size: {
       type: DataTypes.DOUBLE,
       allowNull: true,
-      defaultValue: 0,
+      defaultValue: 100000000,
+    },
+    used_capacity: {
+      type: DataTypes.DOUBLE,
+      allowNull: true,
+      defaultValue: 100000000,
     },
     is_admin: {
       type: DataTypes.BOOLEAN,
