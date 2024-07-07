@@ -5,14 +5,14 @@
 </p>
 
 <p align="center">
-  <a href="./README.md">English</a> ｜ 
-  <a href="./README-zh.md">中文</a>
-</p>
-
-<p align="center">
 <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/diskcloud/service">
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues-pr/diskcloud/service">
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/diskcloud/service">
+</p>
+
+<p align="center">
+  <a href="./README.md">English</a> ｜ 
+  <a href="./README-zh.md">中文</a>
 </p>
 
 ## 支持系统 💻
@@ -79,4 +79,4 @@
 
 ## 其他文档 📖
 
-[Contribution Guide](./CONTRIBUTING.md) | [Security Policy](./SECURITY.md) | [Update Log](./CHANGELOG.md) | [Licence](./LICENSE)
+[贡献指南](./CONTRIBUTING.md) | [安全策略](./SECURITY.md) | [更新日志](./CHANGELOG.md) | [许可证](./LICENSE)
