@@ -1,4 +1,11 @@
-# [2.0.0](https://github.com/diskcloud/service/compare/v2.0.0-beta.1-plus...v2.0.0) (2024-07-05)
+# [2.0.0](https://github.com/diskcloud/service/compare/v2.0.0-beta.1-plus...v2.0.0) (2024-07-07)
+
+
+### Features
+
+* **auth:** 27 Adjust disabling user routing to universal editing routing ([2902cc6](https://github.com/diskcloud/service/commit/2902cc6c869d7c3056b898e3f723df97de0140e7))
+* **files:** [#5](https://github.com/diskcloud/service/issues/5) File Recycle Bin Function ([c502166](https://github.com/diskcloud/service/commit/c50216606e6af4914b255cbc731c5e67273b663c))
+* **users:** [#28](https://github.com/diskcloud/service/issues/28) New registered users increase capacity limit by 100MB ([7a17dd4](https://github.com/diskcloud/service/commit/7a17dd4d2edd390e8a0723b1793dffb3e77df3ed))
 
 
 
