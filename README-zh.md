@@ -10,10 +10,7 @@
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/diskcloud/service">
 </p>
 
-<p align="center">
-  <a href="./README.md">English</a> ｜ 
-  <a href="./README-zh.md">中文</a>
-</p>
+[English](./README.md) | 中文
 
 ## 支持系统 💻
 
