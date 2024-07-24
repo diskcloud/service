@@ -11,6 +11,7 @@ const {
   USERS_LOGIN_POST,
   USER_REST_PARAMS_PATCH,
 } = require("../types/schema/users");
+const { convertTimeFormat } = require("../utils/convertTimeFormat")
 
 const { validateBody, validateParams } = require("../types");
 const { USER_STATUS, USER_ACTION_TYPES } = require("../constants/users");
@@ -41,7 +42,7 @@ router.post("/sessions", validateBody(USERS_LOGIN_POST), async (ctx) => {
     const token = jwt.sign(
       { id: user.id, username: user.username },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: convertTimeFormat(process.env.TOKEN_EXPIRE_TIME, 's') }
     );
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
@@ -52,7 +53,7 @@ router.post("/sessions", validateBody(USERS_LOGIN_POST), async (ctx) => {
 
     // 将 token 存储在 Redis 中
     await redisClient.set(`user_login:${user.id}`, token, {
-      EX: process.env.USER_LOGIN_TOKEN_EXPIRE_TIME,
+      EX: process.env.TOKEN_EXPIRE_TIME,
     });
 
     user.update({
