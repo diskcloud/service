@@ -17,7 +17,7 @@ const app = new Koa();
 
 app.use(cors());
 
-app.use(authenticateToken);
+// app.use(authenticateToken);
 
 app.use(koaBody());
 

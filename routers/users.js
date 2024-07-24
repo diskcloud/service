@@ -1,3 +1,4 @@
+const authenticateToken = require("../middleware/authenticateToken");
 const Router = require("koa-router");
 const redisClient = require("../redis");
 const bcrypt = require("bcrypt");
@@ -15,6 +16,7 @@ const { validateBody, validateParams } = require("../types");
 const { USER_STATUS, USER_ACTION_TYPES } = require("../constants/users");
 
 const router = new Router();
+router.use(authenticateToken)
 
 router.post("/sessions", validateBody(USERS_LOGIN_POST), async (ctx) => {
   const { username, password } = ctx.request.body;

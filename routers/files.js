@@ -9,9 +9,11 @@ const { v4: uuidv4 } = require("uuid");
 const JSZip = require("jszip");
 const { filesize } = require("filesize");
 
+const authenticateToken = require("../middleware/authenticateToken");
 const { detectFileType } = require("../utils/detectFileType");
 const Files = require("../models/files");
 const Users = require("../models/users");
+
 const {
   imageMimeTypes,
   tinifySupportedMimeTypes,
@@ -32,6 +34,8 @@ const {
 tinify.key = process.env.TINIFY_KEY;
 
 const router = new Router();
+router.use(authenticateToken)
+
 const uploadDirectory = path.join(__dirname, "..", "resource"); // 修改后的上传目录
 const iconsDirectory = path.join(__dirname, "..", "public", "icons");
 
