@@ -32,8 +32,7 @@ if [ ! -f .env.local ]; then
     MYSQL_PORT=$(prompt "MYSQL_PORT" "Enter MySQL Port" "3306")
     REDIS_HOST=$(prompt "REDIS_HOST" "Enter Redis Host" "127.0.0.1")
     REDIS_PORT=$(prompt "REDIS_PORT" "Enter Redis Port" "6379")
-    USER_LOGIN_TOKEN_EXPIRE_TIME=$(prompt "USER_LOGIN_TOKEN_EXPIRE_TIME" "Enter User Login Token Expire Time" "3600")
-    JWT_EXPIRES_IN=$(prompt "JWT_EXPIRES_IN" "Enter JWT Expiry Time" "1h")
+    TOKEN_EXPIRE_TIME=$(prompt "TOKEN_EXPIRE_TIME" "Enter User Login Token Expire Time" "86400(1d)")
     JWT_SECRET=$(prompt "JWT_SECRET" "Enter JWT Secret")
 
     # Create .env.local file

@@ -32,7 +32,7 @@ if (-Not (Test-Path .\.env.local)) {
     $MYSQL_PORT = Prompt-Input "Enter MySQL Port" "3306"
     $REDIS_HOST = Prompt-Input "Enter Redis Host" "127.0.0.1"
     $REDIS_PORT = Prompt-Input "Enter Redis Port" "6379"
-    $USER_LOGIN_TOKEN_EXPIRE_TIME = Prompt-Input "Enter User Login Token Expire Time" "3600"
+    $TOKEN_EXPIRE_TIME = Prompt-Input "Enter User Login Token Expire Time" "86400(1d)"
     $JWT_EXPIRES_IN = Prompt-Input "Enter JWT Expiry Time" "1h"
     $JWT_SECRET = Prompt-Input "Enter JWT Secret"
 
