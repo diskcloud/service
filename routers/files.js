@@ -212,6 +212,7 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
         ],
         ...mimeCondition,
       },
+      order: [['created_at', 'DESC']],
       limit,
       offset,
       include: [
@@ -229,6 +230,7 @@ router.get("/files", validateQuery(FILES_LIST_GET_QUERY), async (ctx) => {
         "file_location",
         "thumb_location",
         "is_public",
+        "ext"
       ],
     });
 
@@ -428,16 +430,17 @@ router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
 router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
+  console.log(id);
   try {
     const file = await Files.findOne({
       where: {
         id,
         is_deleted: false,
-        [Op.or]: [
-          { public_expiration: null, is_public: true },
-          { public_expiration: { [Op.gt]: new Date() }, is_public: true },
-          { created_by: ctx.state?.user?.id || null },
-        ],
+        // [Op.or]: [
+          // { public_expiration: null, is_public: true },
+          // { public_expiration: { [Op.gt]: new Date() }, is_public: true },
+        //   { created_by: ctx.state?.user?.id || null },
+        // ],
       },
       attributes: [
         "filename",
@@ -448,8 +451,10 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
         "is_thumb",
         "mime",
         "ext",
+        "id",
       ],
     });
+    console.log(file);
 
     if (!file) {
       ctx.status = 404;
@@ -459,9 +464,10 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
 
     let fileLocation = file.real_file_location;
     // 根据查询参数 'type' 决定返回原图或缩略图
-    if (file.is_thumb && type === "thumb") {
+    if (type === "thumb") {
       fileLocation = file.real_file_thumb_location;
     }
+    console.log(fileLocation);
 
     // 检查文件是否存在
     try {
