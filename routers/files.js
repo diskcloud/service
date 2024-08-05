@@ -430,7 +430,6 @@ router.delete("/files", validateBody(FILES_BODY_BATCH_IDS), async (ctx) => {
 router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
   const { id } = ctx.params;
   const { type } = ctx.query; // 获取查询参数 'type'，可以是 'thumb' 或 'original'
-  console.log(id);
   try {
     const file = await Files.findOne({
       where: {
@@ -454,7 +453,6 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
         "id",
       ],
     });
-    console.log(file);
 
     if (!file) {
       ctx.status = 404;
@@ -467,7 +465,6 @@ router.get("/files/:id/preview", validateParams(FILES_REST_ID), async (ctx) => {
     if (type === "thumb") {
       fileLocation = file.real_file_thumb_location;
     }
-    console.log(fileLocation);
 
     // 检查文件是否存在
     try {
